@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PayDuka Whitepaper v3.0 — Africa's Retail Blockchain Ecosystem</title>
+<meta name="description" content="PayDuka Whitepaper v3.0 — Cash-in merchant network, remittance corridors, PIX-inspired payments, token economics, and full roadmap for Africa's blockchain retail ecosystem.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF7F2;--bg2:#F3EEE6;--bg3:#EDE7DC;
+  --surface:#FFFFFF;--surface2:#F8F5EF;
+  --ink:#1A1815;--ink2:#2D2A25;--ink-soft:#4A4640;
+  --ink-muted:#7A756C;--ink-faint:#A8A29A;
+  --gold:#B8943E;--gold2:#A07F2E;
+  --gold-bg:rgba(184,148,62,.07);--gold-border:rgba(184,148,62,.18);
+  --green:#3D8B5E;--green-bg:rgba(61,139,94,.07);--green-border:rgba(61,139,94,.18);
+  --red:#C0402A;
+  --border:rgba(26,24,21,.06);--border2:rgba(26,24,21,.10);
+  --card-bg:rgba(26,24,21,.025);
+  --font-head:'Space Grotesk',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --radius:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;scroll-padding-top:70px;}
+body{font-family:var(--font-body);background:var(--bg);color:var(--ink-soft);line-height:1.8;-webkit-font-smoothing:antialiased;}
+::selection{background:var(--gold);color:#fff;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:3px;}
+a{color:var(--gold);text-decoration:none;}
+a:hover{color:var(--ink);}
+
+/* TOPBAR */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(250,247,242,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:.6rem 2rem;font-family:var(--font-mono);font-size:.72rem;}
+.topbar a{color:var(--ink-muted);letter-spacing:.04em;transition:color .2s;}
+.topbar a:hover{color:var(--gold);}
+.topbar .logo{font-family:var(--font-head);font-weight:700;font-size:1rem;color:var(--ink);letter-spacing:-.02em;}
+.topbar .logo span{color:var(--gold);}
+.topbar-right{display:flex;align-items:center;gap:1.2rem;}
+.topbar .btn-sm{background:var(--gold);color:#fff;padding:.35rem .9rem;border-radius:5px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;font-size:.65rem;transition:background .2s;}
+.topbar .btn-sm:hover{background:var(--gold2);color:#fff;}
+
+/* MAIN */
+.main{max-width:820px;margin:0 auto;padding:5rem 2rem 4rem;}
+
+/* COVER */
+.cover{text-align:center;padding:4rem 0 3rem;border-bottom:1px solid var(--border);}
+.cover-badge{display:inline-block;font-family:var(--font-mono);font-size:.65rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--gold-border);padding:.35rem 1rem;border-radius:16px;background:var(--gold-bg);margin-bottom:1.5rem;}
+.cover h1{font-family:var(--font-head);font-size:clamp(2rem,5vw,3.2rem);font-weight:700;color:var(--ink);letter-spacing:-.04em;line-height:1.1;margin-bottom:.8rem;}
+.cover .sub{font-size:1.05rem;color:var(--ink-muted);max-width:540px;margin:0 auto;}
+.cover .version{font-family:var(--font-mono);font-size:.7rem;color:var(--ink-faint);margin-top:1.5rem;letter-spacing:.08em;}
+
+/* TOC */
+.toc{padding:2.5rem 0;border-bottom:1px solid var(--border);}
+.toc h2{font-family:var(--font-head);font-size:1.2rem;font-weight:700;color:var(--ink);margin-bottom:1.2rem;}
+.toc ol{list-style:none;counter-reset:toc;columns:2;column-gap:2rem;}
+.toc li{counter-increment:toc;padding:.35rem 0;border-bottom:1px solid var(--border);font-size:.88rem;}
+.toc li::before{content:counter(toc,decimal-leading-zero) " — ";font-family:var(--font-mono);font-size:.75rem;color:var(--gold);letter-spacing:.04em;}
+.toc a{color:var(--ink-soft);}
+.toc a:hover{color:var(--gold);}
+@media(max-width:600px){.toc ol{columns:1;}}
+
+/* SECTIONS */
+.wp-section{padding:3rem 0;border-bottom:1px solid var(--border);}
+.wp-section:last-child{border-bottom:none;}
+.wp-section .snum{font-family:var(--font-mono);font-size:.72rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem;}
+.wp-section h2{font-family:var(--font-head);font-size:clamp(1.4rem,3vw,2rem);font-weight:700;color:var(--ink);letter-spacing:-.02em;margin-bottom:1.2rem;line-height:1.2;}
+.wp-section h3{font-family:var(--font-head);font-size:1.1rem;font-weight:600;color:var(--ink2);margin:2rem 0 .8rem;}
+.wp-section p{margin-bottom:1rem;font-size:.95rem;}
+.wp-section ul,.wp-section ol{margin:.8rem 0 1.2rem 1.5rem;font-size:.92rem;}
+.wp-section li{margin-bottom:.4rem;}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:.85rem;}
+th{font-family:var(--font-mono);font-size:.7rem;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:.8rem;border-bottom:2px solid var(--gold-border);background:var(--gold-bg);}
+td{padding:.7rem .8rem;border-bottom:1px solid var(--border);color:var(--ink-soft);}
+tr:hover td{background:var(--card-bg);}
+
+/* CALLOUTS */
+.callout{padding:1.5rem;border-radius:var(--radius);margin:1.5rem 0;font-size:.9rem;}
+.callout-gold{background:var(--gold-bg);border:1px solid var(--gold-border);}
+.callout-green{background:var(--green-bg);border:1px solid var(--green-border);}
+.callout strong{color:var(--ink);display:block;margin-bottom:.3rem;}
+
+/* GREEN ACCENTS for cash-in section */
+.wp-section.green-section .snum{color:var(--green);}
+.wp-section.green-section h2 .accent{color:var(--green);}
+
+/* FOOTER */
+.wp-footer{text-align:center;padding:3rem 0 2rem;font-size:.75rem;color:var(--ink-faint);}
+.wp-footer a{color:var(--gold);}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <a href="https://payduka.xyz/" class="logo">Pay<span>Duka</span></a>
+  <div class="topbar-right">
+    <a href="https://payduka.xyz/">← Back to site</a>
+    <a href="https://payduka.xyz/PayDuka_Whitepaper_v2.0.pdf">Download PDF</a>
+    <a href="https://payduka.xyz/ico.html" class="btn-sm">Buy PDuka</a>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- COVER -->
+<div class="cover">
+  <span class="cover-badge">Whitepaper v3.0 · June 2026</span>
+  <h1>PayDuka</h1>
+  <p class="sub">Africa's Blockchain-Powered Retail Payment, Cash-In &amp; Remittance Ecosystem — Built on Polygon</p>
+  <p class="version">CONFIDENTIAL · FOR INVESTOR &amp; PARTNER REVIEW</p>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#s1">Abstract</a></li>
+    <li><a href="#s2">Vision &amp; Mission</a></li>
+    <li><a href="#s3">The Problem</a></li>
+    <li><a href="#s4">PIX Proof of Concept</a></li>
+    <li><a href="#s5">The Solution — PayDuka Ecosystem</a></li>
+    <li><a href="#s6">Payment Pathways</a></li>
+    <li><a href="#s7">Cash-In Merchant Network</a></li>
+    <li><a href="#s8">Cash Remittance via Merchant Network</a></li>
+    <li><a href="#s9">Auto-Refill Wallet</a></li>
+    <li><a href="#s10">Card-Advance Engine</a></li>
+    <li><a href="#s11">Technology Architecture</a></li>
+    <li><a href="#s12">Tokenomics</a></li>
+    <li><a href="#s13">Monetary Policy</a></li>
+    <li><a href="#s14">ICO &amp; Token Sale</a></li>
+    <li><a href="#s15">Business Model &amp; Revenue</a></li>
+    <li><a href="#s16">Franchise Strategy</a></li>
+    <li><a href="#s17">Play-to-Earn</a></li>
+    <li><a href="#s18">Market Opportunity</a></li>
+    <li><a href="#s19">Competitive Landscape</a></li>
+    <li><a href="#s20">Roadmap</a></li>
+    <li><a href="#s21">Social Impact</a></li>
+    <li><a href="#s22">Legal &amp; Compliance</a></li>
+    <li><a href="#s23">Risk Factors</a></li>
+    <li><a href="#s24">Team</a></li>
+    <li><a href="#s25">Conclusion</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 1 — ABSTRACT -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="wp-section" id="s1">
+  <p class="snum">01 — Abstract</p>
+  <h2>Abstract</h2>
+  <p>PayDuka is a blockchain-powered retail payment and financial-inclusion ecosystem built on Polygon, designed to serve the 44 million+ micro, small, and medium enterprises (MSMEs) across Africa and the 400 million+ adults who remain unbanked. By combining instant digital payments, a decentralised cash-in/cash-out merchant network, low-cost cross-border remittances, and a deflationary utility token (PDuka), PayDuka creates a self-reinforcing economic loop: merchants earn revenue from both sales and financial services, customers gain access to digital finance through cash deposits at local shops, and the token economy deflates with every transaction.</p>
+  <p>Version 3.0 of this whitepaper introduces two major new capabilities: the <strong>Cash-In Merchant Network</strong>, which turns every PayDuka merchant into a deposit and withdrawal agent, and the <strong>Cash Remittance System</strong>, which enables person-to-person money transfers via the merchant network at a fraction of traditional costs. These features are built on the same Polygon smart-contract infrastructure, share the same 3-way split (treasury, burn, settlement), and extend PayDuka's reach beyond digital-native customers to anyone with physical cash.</p>
+</div>
+
+<!-- SECTION 2 — VISION -->
+<div class="wp-section" id="s2">
+  <p class="snum">02 — Vision &amp; Mission</p>
+  <h2>Vision &amp; Mission</h2>
+  <p><strong>Vision:</strong> A world where every African merchant — from a Soweto spaza shop to a Nairobi market stall — can accept payments, offer deposits, send remittances, and access working capital through a single device, at near-zero cost, with no bank account required.</p>
+  <p><strong>Mission:</strong> To build the infrastructure layer that connects Africa's cash economy to blockchain-powered digital finance, starting with payments and expanding into savings, credit, gaming, and governance — owned by the merchants and communities it serves.</p>
+</div>
+
+<!-- SECTION 3 — THE PROBLEM -->
+<div class="wp-section" id="s3">
+  <p class="snum">03 — The Problem</p>
+  <h2>The Problem</h2>
+  <p>Africa's retail payment landscape is broken in multiple dimensions. Over 95% of the continent's MSMEs are micro-enterprises operating on razor-thin margins — often in the single digits. The dominant digital payment model charges merchants 0.5–3% per transaction (the merchant discount rate), which can consume a third of a micro-merchant's profit on a R100 sale. This isn't resistance to innovation; it's basic arithmetic that makes digital payment acceptance financially unviable for the majority.</p>
+  <p>Cash remains dominant because it offers two things digital payments cannot: zero direct cost and immediate availability. But cash has severe hidden costs — theft risk, travel time to banks, storage concerns, and complete exclusion from the formal financial system. Meanwhile, 400 million+ African adults remain entirely unbanked, with no mechanism to participate in digital commerce at all.</p>
+
+  <h3>The Remittance Crisis</h3>
+  <p>Africa receives nearly $100 billion in remittances annually, with $20 billion flowing within the continent. Yet the average cost of sending $200 to Africa is 7.39% — more than double the UN's SDG target of 3%. Within the SADC region alone, an estimated 70% of cross-border flows remain informal because formal channels are too expensive, too slow, or too inaccessible. Workers sending R500 home may pay R37–R74 in fees and wait 1–3 days for delivery. The informal alternative — sending cash with a bus driver — carries obvious risks.</p>
+
+  <div class="callout callout-gold">
+    <strong>The Core Problem Statement</strong>
+    44 million African MSMEs lose R30,000–R42,000 per year in payment processing fees. 400 million adults have no bank account. $100 billion in remittances bleed 7.4% to intermediaries. The technology to solve all three problems already exists — it just hasn't been deployed for Africa's informal retail economy.
+  </div>
+</div>
+
+<!-- SECTION 4 — PIX PROOF -->
+<div class="wp-section" id="s4">
+  <p class="snum">04 — PIX Proof of Concept</p>
+  <h2>PIX — Proof That Instant, Free Payments Transform Economies</h2>
+  <p>Brazil's PIX system, launched in November 2020, provides the definitive proof that instant, near-zero-cost payments can transform an entire economy in under five years. As of late 2025, PIX processes approximately 7.9 billion transactions per month, moving an estimated $6.7 trillion annually — equivalent to roughly 7× Brazil's GDP. 170 million Brazilians (93% of the adult population) use PIX, including 60 million who lack credit cards entirely.</p>
+  <p>The impact on merchants has been dramatic: businesses offering PIX saw average revenue increase by 16% and customer base grow by 25% within six months. The transaction mix has shifted from 73% person-to-person in 2021 to a projected 48% person-to-business by mid-2026, proving that when payment friction drops to zero, digital commerce accelerates exponentially.</p>
+  <p>In South Africa, PayShap — the real-time payment rail launched in 2023 — has already processed approximately R742 billion across 811 million transactions with 5.6 million registered ShapIDs, growing over 1,000% since December 2023. This demonstrates that the South African market is ready for instant, low-cost payments. PayDuka builds on this momentum by adding the blockchain settlement layer, the merchant cash-in network, and the tokenised reward system that PayShap lacks.</p>
+</div>
+
+<!-- SECTION 5 — THE SOLUTION -->
+<div class="wp-section" id="s5">
+  <p class="snum">05 — The Solution</p>
+  <h2>The PayDuka Ecosystem</h2>
+  <p>PayDuka is not a single product — it is an integrated ecosystem of six interlocking capabilities, all running on Polygon and connected through the PDuka token:</p>
+  <ol>
+    <li><strong>Retail Payment Acceptance:</strong> Merchants accept card, crypto, and account-to-account payments via PoS terminal with sub-2-second on-chain settlement and fees under $0.01.</li>
+    <li><strong>Cash-In Merchant Network:</strong> Every PayDuka merchant doubles as a cash deposit and withdrawal agent. Customers walk in with physical cash, walk out with a funded digital wallet — no bank account required.</li>
+    <li><strong>Cash Remittance Network:</strong> Person-to-person money transfers via the merchant network. Sender deposits cash at Merchant A, recipient collects cash at Merchant B — anywhere in the network, including cross-border.</li>
+    <li><strong>Auto-Refill Wallet:</strong> Threshold-based automatic funding from linked bank accounts via Stitch API / PayShap / Capitec Pay, keeping the merchant float and customer wallet always ready.</li>
+    <li><strong>Card-Advance Engine:</strong> Real-time micro-advances against future card receivables, providing working capital to merchants who have been excluded from traditional credit.</li>
+    <li><strong>Play-to-Earn &amp; Governance:</strong> Mobile games that reward PDuka tokens and a governance system where staked tokens equal votes on protocol decisions.</li>
+  </ol>
+</div>
+
+<!-- SECTION 6 — PAYMENT PATHWAYS -->
+<div class="wp-section" id="s6">
+  <p class="snum">06 — Payment Pathways</p>
+  <h2>Payment Pathways</h2>
+  <p>PayDuka supports multiple payment acceptance methods, each settling on-chain via the same smart-contract architecture:</p>
+  <table>
+    <tr><th>Pathway</th><th>Settlement</th><th>Fee</th><th>Speed</th></tr>
+    <tr><td>Card tap/swipe via PoS</td><td>ZARP to merchant wallet</td><td>&lt;$0.01</td><td>&lt;2 seconds</td></tr>
+    <tr><td>PayShap (account-to-account)</td><td>ZARP to merchant wallet</td><td>R0–R7.50 per refill</td><td>&lt;2 seconds</td></tr>
+    <tr><td>Capitec Pay VRP</td><td>ZARP to merchant wallet</td><td>R0–R5 per refill</td><td>&lt;2 seconds</td></tr>
+    <tr><td>Crypto (USDC/USDT/PDuka)</td><td>Direct token transfer</td><td>Gas only (&lt;$0.01)</td><td>&lt;2 seconds</td></tr>
+    <tr><td>Cash deposit at merchant</td><td>ZARP minted to customer wallet</td><td>Flat fee (see §7)</td><td>Instant</td></tr>
+    <tr><td>Cash remittance</td><td>ZARP transfer sender→recipient</td><td>Flat fee (see §8)</td><td>&lt;2 seconds</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 7 — CASH-IN MERCHANT NETWORK (NEW) -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="wp-section green-section" id="s7">
+  <p class="snum">07 — Cash-In Merchant Network</p>
+  <h2><span class="accent">Cash-In:</span> Every Merchant Is a Bank Branch</h2>
+
+  <h3>7.1 The Opportunity</h3>
+  <p>Africa's informal economy runs on cash. Despite the growth of mobile money — 856 million registered accounts processing $912 billion annually across Sub-Saharan Africa — digital merchant payments remain stubbornly limited. The reason is simple: merchants on razor-thin margins cannot afford to pay 0.5–3% on every transaction, and their suppliers still insist on cash. The missing link is a way for customers to convert cash into digital value at the same places they already shop.</p>
+  <p>Standard Bank's Instant Money network has already proven this model at scale, expanding to over 400,000 cashout points — including spaza shops, convenience stores, and tuck shops via partners like Flash, Shop2Shop, and OTT. Transaction volumes grew 169% over five years, with over 100% growth in community cashout activity in the last two years alone. PayDuka applies the same principle but adds blockchain settlement, merchant commissions, and token rewards.</p>
+
+  <h3>7.2 How It Works</h3>
+  <p>The cash-in flow is deliberately simple — designed to require zero financial literacy from the customer and minimal training for the merchant:</p>
+  <ol>
+    <li><strong>Customer arrives with cash.</strong> They visit any PayDuka merchant — a spaza shop, tuck shop, convenience store, or franchise outlet. They need only a phone number or PayDuka wallet ID. No bank account, no ID document for deposits under the tiered KYC threshold (R1,000/day, R5,000/month).</li>
+    <li><strong>Merchant processes the deposit.</strong> The merchant opens the PayDuka app, selects "Cash-In", enters the customer's identifier and the deposit amount. The customer hands over physical cash. The merchant taps "Confirm".</li>
+    <li><strong>Instant on-chain credit.</strong> The PayDuka smart contract credits the equivalent ZARP (ZAR-pegged stablecoin) to the customer's wallet on Polygon. Settlement occurs in under 2 seconds. Both parties receive SMS and in-app confirmation with a unique transaction reference.</li>
+    <li><strong>Merchant earns commission.</strong> A flat commission (see fee table below) is credited to the merchant's wallet in ZARP — an additional revenue stream layered on top of their existing retail business.</li>
+  </ol>
+
+  <h3>7.3 Fee Structure</h3>
+  <table>
+    <tr><th>Deposit Amount</th><th>Customer Fee</th><th>Merchant Commission</th><th>Protocol Fee (3-Way Split)</th></tr>
+    <tr><td>R1 – R100</td><td>R2.00 flat</td><td>R1.50</td><td>R0.50 (treasury + burn)</td></tr>
+    <tr><td>R101 – R500</td><td>R5.00 flat</td><td>R3.50</td><td>R1.50</td></tr>
+    <tr><td>R501 – R1,000</td><td>R8.00 flat</td><td>R5.50</td><td>R2.50</td></tr>
+    <tr><td>R1,001 – R3,000</td><td>R15.00 flat</td><td>R10.00</td><td>R5.00</td></tr>
+    <tr><td>R3,001 – R5,000</td><td>R25.00 flat</td><td>R17.00</td><td>R8.00</td></tr>
+  </table>
+
+  <div class="callout callout-green">
+    <strong>Merchant Economics Example</strong>
+    A spaza shop processing 40 cash-in deposits per day at an average of R250 each earns approximately R140/day in commissions (40 × R3.50). That is R4,200/month in new revenue — equivalent to adding an entirely new product line with zero inventory cost. Over a year, this is R50,400 in additional income for a single merchant.
+  </div>
+
+  <h3>7.4 Float Management</h3>
+  <p>Cash-in merchants must maintain a digital "float" — a ZARP balance in their merchant wallet from which customer deposits are credited. PayDuka provides multiple float-replenishment mechanisms: bank transfer via Stitch API, PayShap instant transfer, Capitec Pay VRP, or rebalancing from another merchant in the network. Merchants receive real-time float alerts when their balance drops below configurable thresholds, and can set up auto-refill from their linked bank account.</p>
+  <p>For cash-out (withdrawal) transactions, the reverse applies: the merchant dispenses physical cash and receives the equivalent ZARP from the customer's wallet. This naturally rebalances float — merchants who do more cash-ins than cash-outs accumulate digital float, while merchants in recipient-heavy areas accumulate physical cash. PayDuka's peer-to-peer float marketplace allows neighbouring merchants to trade float positions, inspired by IDEO.org's Rebalance concept for mobile money agents.</p>
+
+  <h3>7.5 KYC &amp; Compliance</h3>
+  <p>PayDuka implements tiered KYC aligned with FICA and SARB guidelines for electronic money:</p>
+  <table>
+    <tr><th>Tier</th><th>Requirement</th><th>Daily Limit</th><th>Monthly Limit</th></tr>
+    <tr><td>Tier 0 — Phone Only</td><td>Phone number + OTP verification</td><td>R1,000</td><td>R5,000</td></tr>
+    <tr><td>Tier 1 — Basic</td><td>Phone + SA ID / passport scan</td><td>R5,000</td><td>R25,000</td></tr>
+    <tr><td>Tier 2 — Full</td><td>Phone + ID + proof of address</td><td>R25,000</td><td>R100,000</td></tr>
+  </table>
+  <p>Merchant agents undergo a separate onboarding process including business verification, AML training, and a minimum float deposit. All transactions are recorded on-chain, providing a complete and immutable audit trail for regulatory reporting.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 8 — CASH REMITTANCE (NEW) -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="wp-section green-section" id="s8">
+  <p class="snum">08 — Cash Remittance Network</p>
+  <h2><span class="accent">Remittance:</span> Send Money Anywhere via the Merchant Network</h2>
+
+  <h3>8.1 The Market</h3>
+  <p>Africa receives nearly $100 billion in formal remittances annually. The informal remittance market is estimated at 35–75% of formal channels, with Sub-Saharan Africa at the higher end. The intra-SADC remittance market alone comprises at least R6.2 billion ($1 billion) in annual cross-border flows, with 70% moving through informal channels. By 2035, the total African remittance market (formal + informal) could reach $500 billion. The average cost of sending money to Sub-Saharan Africa remains 7.39% — well above the UN SDG target of 3% and more than 4× the cost of mobile money transfers (1.5% average in West Africa).</p>
+
+  <h3>8.2 How PayDuka Remittance Works</h3>
+  <ol>
+    <li><strong>Sender deposits cash at Merchant A.</strong> A worker in Johannesburg walks into a PayDuka spaza shop, provides the recipient's phone number and the amount they wish to send (e.g., R500). They hand over R500 plus a flat remittance fee (R5–R15 depending on amount and corridor). The merchant processes the transaction via the PayDuka app — selecting "Send Money" and entering recipient details.</li>
+    <li><strong>Instant blockchain transfer.</strong> The PayDuka smart contract converts the deposit to ZARP and transfers it to the recipient's wallet on Polygon in under 2 seconds. No SWIFT messages, no correspondent banks, no 3-day settlement queue. The recipient receives an SMS with a unique collection code and the amount available.</li>
+    <li><strong>Recipient collects at Merchant B.</strong> The recipient walks into any PayDuka merchant in their area — a convenience store in Limpopo, a tuck shop in Giyani, a spaza shop in Maputo. They present their phone number and collection code. The merchant verifies via the app and dispenses cash. Alternatively, the recipient can keep the funds in their PayDuka wallet and spend digitally.</li>
+  </ol>
+
+  <h3>8.3 Fee Structure — Domestic Remittance</h3>
+  <table>
+    <tr><th>Amount Sent</th><th>Sender Fee</th><th>Sending Merchant Commission</th><th>Receiving Merchant Commission</th><th>Protocol</th></tr>
+    <tr><td>R1 – R200</td><td>R5.00</td><td>R1.50</td><td>R1.50</td><td>R2.00</td></tr>
+    <tr><td>R201 – R500</td><td>R8.00</td><td>R2.50</td><td>R2.50</td><td>R3.00</td></tr>
+    <tr><td>R501 – R1,500</td><td>R12.00</td><td>R3.50</td><td>R3.50</td><td>R5.00</td></tr>
+    <tr><td>R1,501 – R5,000</td><td>R20.00</td><td>R6.00</td><td>R6.00</td><td>R8.00</td></tr>
+  </table>
+
+  <div class="callout callout-green">
+    <strong>Cost Comparison: Sending R500 from Johannesburg to Limpopo</strong>
+    Traditional bank transfer: ~R30 + potential ATM withdrawal fee (R10) = R40 total (8.0%). Informal bus driver: R50 + risk of loss (10.0%). PayDuka merchant network: R8.00 flat (1.6%). PayDuka is up to 5× cheaper — and instant.
+  </div>
+
+  <h3>8.4 Cross-Border Remittance</h3>
+  <p>For cross-border corridors (SA → Mozambique, SA → Zimbabwe, SA → Kenya), PayDuka adds a currency conversion layer powered by on-chain stablecoin liquidity pools. The sender deposits ZAR; the recipient receives the local equivalent. Cross-border fees are capped at 2–3% — less than half the 7.39% regional average. Initial corridors will launch in Q4 2026, with expansion to West Africa and East Africa in 2027.</p>
+  <table>
+    <tr><th>Corridor</th><th>Traditional Avg Cost</th><th>PayDuka Target Cost</th><th>Launch</th></tr>
+    <tr><td>SA → Mozambique</td><td>12.5%</td><td>2.5%</td><td>Q4 2026</td></tr>
+    <tr><td>SA → Zimbabwe</td><td>9.8%</td><td>2.0%</td><td>Q4 2026</td></tr>
+    <tr><td>SA → Kenya</td><td>8.2%</td><td>2.5%</td><td>Q1 2027</td></tr>
+    <tr><td>SA → Nigeria</td><td>7.1%</td><td>3.0%</td><td>Q2 2027</td></tr>
+  </table>
+
+  <h3>8.5 The Dual-Commission Model</h3>
+  <p>The remittance system creates a powerful dual-commission model: both the sending merchant and the receiving merchant earn commission on every transaction. This incentivises merchants on both ends of the corridor to join the network, creating natural geographic expansion. A merchant in Johannesburg earns from outbound remittances; a merchant in Giyani earns from inbound collections. Both earn from local cash-in deposits as well. The result is a merchant network that grows organically along remittance corridors.</p>
+
+  <h3>8.6 Revenue Projection — Cash-In &amp; Remittance</h3>
+  <table>
+    <tr><th>Metric</th><th>Year 1</th><th>Year 2</th><th>Year 3</th></tr>
+    <tr><td>Active cash-in agents</td><td>200</td><td>1,500</td><td>5,000</td></tr>
+    <tr><td>Cash-in transactions/month</td><td>24,000</td><td>360,000</td><td>1,800,000</td></tr>
+    <tr><td>Cash-in protocol revenue/month</td><td>R36,000</td><td>R540,000</td><td>R2,700,000</td></tr>
+    <tr><td>Remittance transactions/month</td><td>6,000</td><td>120,000</td><td>600,000</td></tr>
+    <tr><td>Remittance protocol revenue/month</td><td>R18,000</td><td>R360,000</td><td>R3,000,000</td></tr>
+    <tr><td><strong>Combined annual protocol revenue</strong></td><td><strong>R648,000</strong></td><td><strong>R10,800,000</strong></td><td><strong>R68,400,000</strong></td></tr>
+  </table>
+</div>
+
+<!-- SECTION 9 — AUTO-REFILL WALLET -->
+<div class="wp-section" id="s9">
+  <p class="snum">09 — Auto-Refill Wallet</p>
+  <h2>Auto-Refill Wallet</h2>
+  <p>The PayDuka wallet supports threshold-based automatic funding from linked bank accounts via Stitch API integration, PayShap instant transfer, and Capitec Pay's Variable Recurring Payment (VRP) solution. When a merchant's or customer's wallet balance drops below a configured threshold, the system automatically initiates a bank-to-wallet transfer. This keeps the merchant float always ready for cash-in/cash-out operations and ensures customers never run out of digital funds at the point of sale.</p>
+  <p>Refill costs range from R0 to R7.50 per transaction depending on the funding method, with the cost amortised across multiple payments to an effective R1.25–R1.88 per transaction. Merchants processing high cash-in volumes can configure higher thresholds and larger refill amounts to maintain adequate float without manual intervention.</p>
+</div>
+
+<!-- SECTION 10 — CARD-ADVANCE -->
+<div class="wp-section" id="s10">
+  <p class="snum">10 — Card-Advance Engine</p>
+  <h2>Card-Advance Engine</h2>
+  <p>PayDuka offers real-time micro-advances against future card receivables — providing working capital to merchants who have been excluded from traditional credit. The advance engine analyses on-chain transaction history to determine eligibility, sets a rolling reserve, and automatically deducts repayments from future settlements. Risk controls include a minimum 30-day qualification period, maximum advance of 30% of trailing 30-day volume, and a charge-back cap of 2%.</p>
+  <p>Projected revenue: R256,500/month in Year 1 scaling to R15 million/year by Year 3 as the merchant base grows and transaction history deepens.</p>
+</div>
+
+<!-- SECTION 11 — TECHNOLOGY -->
+<div class="wp-section" id="s11">
+  <p class="snum">11 — Technology Architecture</p>
+  <h2>Technology Architecture</h2>
+  <p>PayDuka is built on a five-layer architecture designed for security, scalability, and regulatory compliance:</p>
+  <ol>
+    <li><strong>Client Layer:</strong> React Native mobile apps (iOS &amp; Android) for merchants and customers, plus a web-based dashboard for analytics and fleet management.</li>
+    <li><strong>API Gateway:</strong> NestJS backend on AWS Cape Town region (af-south-1), running on ECS Fargate with auto-scaling. Handles authentication, request routing, rate limiting, and audit logging.</li>
+    <li><strong>Business Logic Layer:</strong> PostgreSQL for relational data, Redis for caching and session management, BullMQ for job queues (auto-refill triggers, advance calculations, notification dispatch).</li>
+    <li><strong>Integration Layer:</strong> Stitch API for bank connectivity (PayShap, Capitec Pay VRP, account verification), card network APIs for PoS settlement, SMS/push notification services.</li>
+    <li><strong>Blockchain Layer:</strong> Polygon PoS smart contracts including PDukaToken (ERC-20 with burn function), SettlementRegistry, StakingPool, RewardDistributor, CashInRegistry (new), RemittanceRouter (new), and Governance.</li>
+  </ol>
+  <p>The CashInRegistry contract records every cash-in/cash-out transaction on-chain, maintaining an immutable ledger of deposits, withdrawals, merchant commissions, and float positions. The RemittanceRouter handles cross-merchant and cross-border transfers, managing escrow, collection codes, and automatic commission distribution.</p>
+  <p>Estimated infrastructure cost: ~$870/month at pilot scale, scaling horizontally via ECS Fargate as transaction volume increases.</p>
+</div>
+
+<!-- SECTION 12 — TOKENOMICS -->
+<div class="wp-section" id="s12">
+  <p class="snum">12 — Tokenomics</p>
+  <h2>PDuka Token Economics</h2>
+  <p>PDuka is a deflationary ERC-20 utility token on Polygon with a fixed total supply of 21,000,000,000 tokens. No additional tokens can ever be minted — supply can only decrease through the permanent burn mechanism.</p>
+  <table>
+    <tr><th>Allocation</th><th>%</th><th>Tokens</th><th>Notes</th></tr>
+    <tr><td>Ecosystem Growth</td><td>38.05%</td><td>7,990,500,000</td><td>User incentives, merchant onboarding, cash-in agent rewards</td></tr>
+    <tr><td>Staking Rewards</td><td>20.00%</td><td>4,200,000,000</td><td>5-year yield distribution schedule</td></tr>
+    <tr><td>Protocol Development</td><td>15.00%</td><td>3,150,000,000</td><td>24-month vesting</td></tr>
+    <tr><td>Liquidity Provision</td><td>15.00%</td><td>3,150,000,000</td><td>CEX/DEX market making</td></tr>
+    <tr><td>Team &amp; Advisors</td><td>10.00%</td><td>2,100,000,000</td><td>6-month cliff, 24-month linear vest</td></tr>
+    <tr><td>ICO / Presale</td><td>0.95%</td><td>200,000,000</td><td>Seed ($0.005), Round 1 ($0.008), Round 2 ($0.010)</td></tr>
+  </table>
+  <p><strong>Token Utility:</strong> Payment fee discounts (30–60% vs card), staking rewards (8–15% APY, 30–365 day lock-up), Play-to-Earn gaming (entry fees, in-game rewards, tournament prizes), governance (1 staked PDuka = 1 vote), and cash-in loyalty rewards for both merchants and customers.</p>
+  <p>The PDuka token is positioned as a reward and visibility layer — not the primary payment currency. Merchants settle in ZARP (ZAR-pegged stablecoin) for all transactions including cash-in deposits and remittance payouts, ensuring zero crypto volatility exposure. PDuka tokens earned through loyalty programs, staking, and gaming can be held, staked, traded, or used for fee discounts.</p>
+</div>
+
+<!-- SECTION 13 — MONETARY POLICY -->
+<div class="wp-section" id="s13">
+  <p class="snum">13 — Monetary Policy</p>
+  <h2>Monetary Policy</h2>
+  <p>Every transaction processed through the PayDuka network — whether a card payment, a cash-in deposit, a remittance transfer, or a cash-out withdrawal — triggers the same automated 3-way split:</p>
+  <table>
+    <tr><th>Component</th><th>%</th><th>Destination</th></tr>
+    <tr><td>Treasury Return</td><td>2.0%</td><td>Protocol treasury — refills reserve for future settlements</td></tr>
+    <tr><td>Permanent Burn</td><td>0.5%</td><td>Burn address — removed from 21B supply forever</td></tr>
+    <tr><td>Settlement</td><td>97.5%</td><td>Merchant wallet (ZARP) or customer wallet (ZARP)</td></tr>
+  </table>
+  <p><strong>PayDuka's Golden Rule:</strong> Skim Rate (2%) > Burn Rate (0.5%). The treasury nets +1.5% per transaction — growing stronger with every payment, every cash-in deposit, and every remittance processed. The addition of cash-in and remittance volume significantly multiplies the burn rate and treasury growth, as these transactions represent entirely new volume that would not exist in a payment-only system.</p>
+</div>
+
+<!-- SECTION 14 — ICO -->
+<div class="wp-section" id="s14">
+  <p class="snum">14 — ICO &amp; Token Sale</p>
+  <h2>ICO &amp; Token Sale</h2>
+  <table>
+    <tr><th>Round</th><th>Price</th><th>Tokens</th><th>Raise</th><th>Status</th></tr>
+    <tr><td>Seed</td><td>$0.005</td><td>1,000,000,000</td><td>$5,000,000</td><td>Live</td></tr>
+    <tr><td>Round 1</td><td>$0.008</td><td>—</td><td>—</td><td>Upcoming</td></tr>
+    <tr><td>Round 2</td><td>$0.010</td><td>—</td><td>—</td><td>Upcoming</td></tr>
+    <tr><td>DEX Listing</td><td>$0.010+</td><td>—</td><td>—</td><td>Target Q4 2026</td></tr>
+  </table>
+  <p>Minimum purchase: $10. Payment methods: USDC or POL on Polygon Mainnet. Tokens delivered instantly to the buyer's wallet upon confirmation.</p>
+</div>
+
+<!-- SECTION 15 — BUSINESS MODEL -->
+<div class="wp-section" id="s15">
+  <p class="snum">15 — Business Model &amp; Revenue</p>
+  <h2>Business Model &amp; Revenue</h2>
+  <table>
+    <tr><th>Revenue Stream</th><th>Year 1</th><th>Year 2</th><th>Year 3</th></tr>
+    <tr><td>Wallet &amp; payment fees</td><td>R2,400,000</td><td>R9,600,000</td><td>R24,000,000</td></tr>
+    <tr><td>Cash-in protocol fees</td><td>R432,000</td><td>R6,480,000</td><td>R32,400,000</td></tr>
+    <tr><td>Remittance protocol fees</td><td>R216,000</td><td>R4,320,000</td><td>R36,000,000</td></tr>
+    <tr><td>Card-advance margins</td><td>R3,078,000</td><td>R9,000,000</td><td>R15,000,000</td></tr>
+    <tr><td>Cross-border FX spread</td><td>—</td><td>R1,200,000</td><td>R6,000,000</td></tr>
+    <tr><td>SaaS &amp; dashboard fees</td><td>R240,000</td><td>R960,000</td><td>R2,400,000</td></tr>
+    <tr><td>Float interest income</td><td>R120,000</td><td>R720,000</td><td>R2,400,000</td></tr>
+    <tr><td>Token transaction fees</td><td>R480,000</td><td>R1,920,000</td><td>R4,800,000</td></tr>
+    <tr><td>Staking fee share</td><td>R480,000</td><td>R1,920,000</td><td>R4,800,000</td></tr>
+    <tr><td>Gaming revenue</td><td>R600,000</td><td>R2,400,000</td><td>R6,000,000</td></tr>
+    <tr><td>Franchise licensing</td><td>R360,000</td><td>R1,440,000</td><td>R3,600,000</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>R8,406,000</strong></td><td><strong>R39,960,000</strong></td><td><strong>R137,400,000</strong></td></tr>
+  </table>
+  <div class="callout callout-gold">
+    <strong>Cash-In &amp; Remittance Impact</strong>
+    The cash-in and remittance revenue streams contribute R648,000 in Year 1, growing to R68,400,000 in Year 3 — representing 49.8% of total Year 3 revenue. These streams did not exist in the v2.0 business model. They transform PayDuka from a payment processor into a full financial-services infrastructure provider.
+  </div>
+</div>
+
+<!-- SECTION 16 — FRANCHISE -->
+<div class="wp-section" id="s16">
+  <p class="snum">16 — Franchise Strategy</p>
+  <h2>Franchise Strategy</h2>
+  <p>PayDuka's pilot strategy targets franchise retail sites — restaurants, convenience stores, and petrol station forecourts — in South Africa and Kenya. Franchises offer predictable foot traffic, existing POS infrastructure, and standardised operations that simplify merchant onboarding. With the addition of cash-in services, franchise partners gain an entirely new revenue stream: every customer who deposits cash at a franchise location generates a commission for the franchisee while deepening their engagement with the PayDuka ecosystem.</p>
+</div>
+
+<!-- SECTION 17 — P2E -->
+<div class="wp-section" id="s17">
+  <p class="snum">17 — Play-to-Earn</p>
+  <h2>Play-to-Earn Gaming</h2>
+  <p>PayDuka's Play-to-Earn platform (Market Tycoon, PayDuka Quiz) rewards players with real PDuka tokens. Entry fees, in-game purchases, and tournament prizes all flow through the same Polygon smart contracts. Year 2 revenue forecast: ~$600,000 from gaming alone. The P2E module also drives wallet creation and token circulation among demographics who may not initially engage with payments — creating a funnel into the broader ecosystem including cash-in and remittance services.</p>
+</div>
+
+<!-- SECTION 18 — MARKET -->
+<div class="wp-section" id="s18">
+  <p class="snum">18 — Market Opportunity</p>
+  <h2>Market Opportunity</h2>
+  <table>
+    <tr><th>Market</th><th>Size</th><th>Source</th></tr>
+    <tr><td>African retail payments TAM</td><td>$800B+</td><td>World Bank / AfDB</td></tr>
+    <tr><td>African MSMEs</td><td>44M+</td><td>IFC / CGAP</td></tr>
+    <tr><td>Unbanked adults (Africa)</td><td>400M+</td><td>Global Findex</td></tr>
+    <tr><td>African formal remittances</td><td>$100B/year</td><td>World Bank / GFRID</td></tr>
+    <tr><td>Projected total remittances by 2035</td><td>$500B/year</td><td>Dai Magister</td></tr>
+    <tr><td>Intra-SADC informal flows</td><td>70% of total</td><td>FinMark Trust</td></tr>
+    <tr><td>Mobile money accounts (SSA)</td><td>856M</td><td>GSMA / CGAP</td></tr>
+    <tr><td>DeFi total value locked</td><td>$180B</td><td>DeFiLlama</td></tr>
+    <tr><td>P2E gaming market</td><td>$10B–$65B</td><td>Industry estimates</td></tr>
+    <tr><td>Spaza shops in South Africa</td><td>400,000+</td><td>Standard Bank / SERI</td></tr>
+  </table>
+</div>
+
+<!-- SECTION 19 — COMPETITIVE -->
+<div class="wp-section" id="s19">
+  <p class="snum">19 — Competitive Landscape</p>
+  <h2>Competitive Landscape</h2>
+  <table>
+    <tr><th>Feature</th><th>PayDuka</th><th>Yoco</th><th>SnapScan</th><th>iKhokha</th><th>M-Pesa</th></tr>
+    <tr><td>Bypasses card networks</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+    <tr><td>Sub-2s settlement</td><td>✅</td><td>❌ (2-3 days)</td><td>❌ (1-2 days)</td><td>❌ (2 days)</td><td>✅</td></tr>
+    <tr><td>Cash-in at merchant</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+    <tr><td>Cash remittance</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+    <tr><td>Merchant commission on deposits</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+    <tr><td>Flat fee (not %)</td><td>✅</td><td>❌ (2.6–3%)</td><td>❌ (%)</td><td>❌ (2.75%)</td><td>Varies</td></tr>
+    <tr><td>Same-day advance</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>✅ (Fuliza)</td></tr>
+    <tr><td>Token rewards</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
+    <tr><td>Cross-border</td><td>✅ (Q4 2026)</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+    <tr><td>Blockchain settlement</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
+    <tr><td>No bank account required</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+  </table>
+  <div class="callout callout-gold">
+    <strong>Key Differentiator</strong>
+    PayDuka is the only solution that combines blockchain settlement, merchant cash-in/cash-out, cross-border remittance, flat-fee pricing, and token rewards in a single ecosystem. M-Pesa offers cash-in/cash-out but lacks blockchain transparency and token incentives. Yoco and iKhokha offer merchant payments but cannot process deposits, remittances, or advances.
+  </div>
+</div>
+
+<!-- SECTION 20 — ROADMAP -->
+<div class="wp-section" id="s20">
+  <p class="snum">20 — Roadmap</p>
+  <h2>Roadmap</h2>
+  <table>
+    <tr><th>Phase</th><th>Timeline</th><th>Key Milestones</th><th>Budget</th></tr>
+    <tr><td>Phase 0</td><td>Q1 2026</td><td>Whitepaper, smart contracts, ICO, wallet prototype, cash-in module design</td><td>R280,000</td></tr>
+    <tr><td>Phase 1</td><td>Q2 2026</td><td>PoS launch, 50-merchant pilot, 25 cash-in agents, Joburg→Limpopo remittance MVP</td><td>R2.2–2.75M</td></tr>
+    <tr><td>Phase 2</td><td>Q3 2026</td><td>P2E beta, staking live, 500 PoS terminals, 200+ cash-in agents, 3-province remittance</td><td>R4.4–5.5M</td></tr>
+    <tr><td>Phase 3</td><td>Q4 2026</td><td>Exchange listings, solar PoS, cross-border corridors (SA→Moz, SA→Zim), 1,000+ agents</td><td>R6.6–8.25M</td></tr>
+    <tr><td>Phase 4</td><td>H1 2027</td><td>West Africa expansion, stablecoin, SDK, 5,000+ agents</td><td>R8.8–11M</td></tr>
+    <tr><td>Phase 5</td><td>H2 2027+</td><td>SE Asia, 10,000+ agents, $100M+ volume, full remittance network at &lt;1% cost</td><td>R11.9–16.65M</td></tr>
+  </table>
+</div>
+
+<!-- SECTION 21 — IMPACT -->
+<div class="wp-section" id="s21">
+  <p class="snum">21 — Social Impact</p>
+  <h2>Social Impact</h2>
+  <p>PayDuka's cash-in network directly addresses the financial-inclusion gap that affects 400 million+ unbanked Africans. By turning every merchant into a deposit point, PayDuka creates a bridge between the cash economy and digital finance that requires zero formal banking infrastructure. The remittance network reduces the cost of sending money from 7.4% to under 2% domestically and under 3% cross-border — returning billions of rands annually to families who need it most. Each merchant activated as a cash-in agent gains R4,000–R50,000/year in commission income, strengthening the township and rural economy at the grassroots level.</p>
+</div>
+
+<!-- SECTION 22 — LEGAL -->
+<div class="wp-section" id="s22">
+  <p class="snum">22 — Legal &amp; Compliance</p>
+  <h2>Legal &amp; Compliance</h2>
+  <p>PayDuka operates within the regulatory frameworks of each target jurisdiction. In South Africa, this includes FICA compliance for KYC/AML, POPIA for data protection, and alignment with SARB's payment-system licensing requirements. The cash-in/cash-out agent model requires wallet-as-a-service licensing and PSP (Payment Service Provider) registration. Cross-border remittance corridors require authorised dealer status or partnership with licensed ADLAs (Authorised Dealers with Limited Authority). PayDuka's tiered KYC model is designed to be proportionate to transaction risk while maximising financial inclusion for low-value users.</p>
+</div>
+
+<!-- SECTION 23 — RISK -->
+<div class="wp-section" id="s23">
+  <p class="snum">23 — Risk Factors</p>
+  <h2>Risk Factors</h2>
+  <ul>
+    <li><strong>Regulatory risk:</strong> Evolving crypto and payment regulations across African jurisdictions.</li>
+    <li><strong>Agent fraud risk:</strong> Cash-in agents may attempt float manipulation or phantom transactions. Mitigated by on-chain audit trails, real-time monitoring, and tiered KYC.</li>
+    <li><strong>Float liquidity risk:</strong> Merchants may face cash/digital float imbalances. Mitigated by auto-refill, peer-to-peer float marketplace, and daily rebalancing alerts.</li>
+    <li><strong>Technology risk:</strong> Smart contract vulnerabilities, Polygon network congestion. Mitigated by third-party audits and fallback settlement mechanisms.</li>
+    <li><strong>Market adoption risk:</strong> Merchant and customer onboarding may be slower than projected.</li>
+    <li><strong>Crypto volatility:</strong> PDuka token price fluctuation. Mitigated by settling merchants in ZARP stablecoin.</li>
+    <li><strong>Competition:</strong> Established players (M-Pesa, Yoco) may introduce competing features.</li>
+  </ul>
+</div>
+
+<!-- SECTION 24 — TEAM -->
+<div class="wp-section" id="s24">
+  <p class="snum">24 — Team</p>
+  <h2>Team</h2>
+  <table>
+    <tr><th>Name</th><th>Role</th><th>Focus</th></tr>
+    <tr><td>Mr X.G. Sikhosana</td><td>Founder &amp; CEO</td><td>Strategy, fundraising, partnerships</td></tr>
+    <tr><td>Mr G. Jako</td><td>CTO</td><td>Smart contracts, PoS, wallet, cash-in/remittance module architecture</td></tr>
+    <tr><td>Mrs J. Ndlangamandla</td><td>Head of Operations</td><td>Merchant &amp; agent onboarding, partner management</td></tr>
+    <tr><td>Mr N. Ndlangamandla</td><td>Head of Community &amp; Marketing</td><td>Ambassador networks, exchange listings, brand</td></tr>
+  </table>
+</div>
+
+<!-- SECTION 25 — CONCLUSION -->
+<div class="wp-section" id="s25">
+  <p class="snum">25 — Conclusion</p>
+  <h2>Conclusion</h2>
+  <p>PayDuka v3.0 is no longer just a payment processor — it is a full financial-services infrastructure layer for Africa's informal economy. By combining instant digital payments, a decentralised cash-in merchant network, low-cost remittance corridors, working-capital advances, and a deflationary token economy, PayDuka creates a self-reinforcing flywheel: more merchants attract more customers, more customers fund more wallets, more wallets drive more payments, more payments generate more revenue and more burns, and the cycle continues.</p>
+  <p>The cash-in and remittance features represent the most significant addition to the ecosystem since launch. They address the two largest gaps in Africa's financial infrastructure — the inability of unbanked populations to access digital finance, and the punitive cost of moving money within and across borders. By turning every merchant into both a payment terminal and a banking agent, PayDuka builds the last-mile financial network that Africa has been waiting for.</p>
+  <div class="callout callout-gold">
+    <strong>Join Us</strong>
+    Whether you're a merchant, investor, developer, or community builder — PayDuka is an open invitation to help reshape African commerce. Visit <a href="https://payduka.xyz">payduka.xyz</a> or email <a href="mailto:info@payduka.xyz">info@payduka.xyz</a>.
+  </div>
+</div>
+
+</div><!-- .main -->
+
+<!-- FOOTER -->
+<div class="wp-footer">
+  <p><a href="https://payduka.xyz" style="font-family:var(--font-head);font-weight:700;font-size:1rem;">Pay<span style="color:var(--gold);">Duka</span></a></p>
+  <p style="margin-top:.5rem;">© 2026 PayDuka. All rights reserved. This document is for informational purposes only and does not constitute financial advice.</p>
+  <p><a href="https://payduka.xyz">payduka.xyz</a> · <a href="mailto:info@payduka.xyz">info@payduka.xyz</a></p>
+</div>
+
+</body>
+</html>

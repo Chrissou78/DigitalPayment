@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PayDuka — Retail Payments Reimagined on Blockchain</title>
+<meta name="description" content="PayDuka empowers African merchants with instant, ultra-low-cost blockchain payments on Polygon. Cash-in at any merchant. 21B fixed supply. Sub-2s settlement. Built for Africa.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font-head:'Space Grotesk',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --radius:12px;
+  --transition:0.35s cubic-bezier(.4,0,.2,1);
+}
+[data-theme="dark"]{
+  --bg:#0A0A08;--bg2:#111110;--bg3:#1A1918;
+  --surface:#1E1D1B;--surface2:#252422;
+  --ink:#F5F0E8;--ink2:#E8E2D8;--ink-soft:#C8C2B8;
+  --ink-muted:#8A857C;--ink-faint:#5A5650;
+  --gold:#C8A85C;--gold2:#B8963E;
+  --gold-bg:rgba(200,168,92,.08);--gold-border:rgba(200,168,92,.18);
+  --border:rgba(245,240,232,.06);--border2:rgba(245,240,232,.10);
+  --card-bg:rgba(245,240,232,.03);--card-hover:rgba(245,240,232,.06);
+  --nav-bg:rgba(10,10,8,.85);
+  --green:#5AA87C;--green-bg:rgba(90,168,124,.08);--green-border:rgba(90,168,124,.18);
+  --red:#D4543A;
+}
+[data-theme="light"]{
+  --bg:#FAF7F2;--bg2:#F3EEE6;--bg3:#EDE7DC;
+  --surface:#FFFFFF;--surface2:#F8F5EF;
+  --ink:#1A1815;--ink2:#2D2A25;--ink-soft:#4A4640;
+  --ink-muted:#7A756C;--ink-faint:#A8A29A;
+  --gold:#B8943E;--gold2:#A07F2E;
+  --gold-bg:rgba(184,148,62,.07);--gold-border:rgba(184,148,62,.18);
+  --border:rgba(26,24,21,.06);--border2:rgba(26,24,21,.10);
+  --card-bg:rgba(26,24,21,.025);--card-hover:rgba(26,24,21,.05);
+  --nav-bg:rgba(250,247,242,.88);
+  --green:#3D8B5E;--green-bg:rgba(61,139,94,.07);--green-border:rgba(61,139,94,.18);
+  --red:#C0402A;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;scroll-padding-top:80px;}
+body{
+  font-family:var(--font-body);background:var(--bg);color:var(--ink-soft);
+  line-height:1.7;transition:background var(--transition),color var(--transition);
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--gold);color:var(--bg);}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:3px;}
+img{max-width:100%;display:block;}
+a{color:var(--gold);text-decoration:none;transition:color .2s;}
+a:hover{color:var(--ink);}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--nav-bg);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid var(--border);transition:background var(--transition),border var(--transition);}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:64px;}
+.nav-logo{font-family:var(--font-head);font-weight:700;font-size:1.25rem;color:var(--ink);letter-spacing:-.02em;}
+.nav-logo span{color:var(--gold);}
+.nav-links{display:flex;align-items:center;gap:1.8rem;list-style:none;}
+.nav-links a{font-family:var(--font-mono);font-size:.72rem;font-weight:500;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.06em;transition:color .2s;}
+.nav-links a:hover,.nav-links a.active{color:var(--gold);}
+.nav-cta{background:var(--gold);color:var(--bg);font-family:var(--font-mono);font-size:.72rem;font-weight:500;padding:.55rem 1.1rem;border-radius:6px;letter-spacing:.04em;text-transform:uppercase;transition:background .2s;}
+.nav-cta:hover{background:var(--gold2);color:var(--bg);}
+.theme-toggle{background:none;border:1px solid var(--border2);width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;transition:border-color .2s,background .2s;}
+.theme-toggle:hover{background:var(--card-bg);border-color:var(--gold-border);}
+.burger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px;}
+.burger span{width:22px;height:2px;background:var(--ink-muted);border-radius:1px;transition:all .3s;}
+@media(max-width:900px){
+  .burger{display:flex;}
+  .nav-links{position:fixed;top:64px;left:0;right:0;background:var(--bg);flex-direction:column;gap:0;max-height:0;overflow:hidden;border-bottom:1px solid var(--border);transition:max-height .4s,background var(--transition);}
+  .nav-links.open{max-height:700px;}
+  .nav-links li{width:100%;}
+  .nav-links a,.nav-links .nav-cta{display:block;padding:1rem 2rem;border-bottom:1px solid var(--border);font-size:.8rem;}
+}
+
+/* SECTIONS */
+section{padding:6rem 2rem;}
+.wrap{max-width:1200px;margin:0 auto;}
+.section-num{font-family:var(--font-mono);font-size:.75rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.75rem;}
+.section-rule{width:48px;height:2px;background:var(--gold);margin-bottom:2rem;border-radius:1px;}
+h1,h2,h3,h4{font-family:var(--font-head);color:var(--ink);line-height:1.15;}
+h2{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:700;letter-spacing:-.03em;margin-bottom:1.5rem;}
+h3{font-size:1.15rem;font-weight:600;margin-bottom:.5rem;}
+.subtitle{color:var(--ink-muted);font-size:1.05rem;max-width:640px;margin-bottom:3rem;}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;padding-top:80px;background:radial-gradient(ellipse 50% 40% at 25% 60%,rgba(200,168,92,.06),transparent),radial-gradient(ellipse 40% 50% at 75% 30%,rgba(200,168,92,.04),transparent);}
+.hero-badge{display:inline-block;font-family:var(--font-mono);font-size:.7rem;font-weight:500;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--gold-border);padding:.4rem 1rem;border-radius:20px;margin-bottom:1.5rem;background:var(--gold-bg);}
+.hero h1{font-size:clamp(2.4rem,5.5vw,4rem);font-weight:700;letter-spacing:-.04em;margin-bottom:1.5rem;}
+.hero h1 em{font-style:normal;color:var(--gold);}
+.hero p.hero-desc{font-size:1.1rem;color:var(--ink-muted);max-width:600px;margin-bottom:3rem;line-height:1.8;}
+.hero-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1.5rem;max-width:900px;}
+.hero-stat{padding:1.2rem;border:1px solid var(--border2);border-radius:var(--radius);background:var(--card-bg);transition:border-color .25s,background var(--transition);}
+.hero-stat:hover{border-color:var(--gold-border);background:var(--gold-bg);}
+.hero-stat .val{font-family:var(--font-head);font-size:1.5rem;font-weight:700;color:var(--ink);display:block;margin-bottom:.2rem;}
+.hero-stat .lbl{font-family:var(--font-mono);font-size:.65rem;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.08em;}
+.page-marker{font-family:var(--font-mono);font-size:.6rem;color:var(--ink-faint);letter-spacing:.12em;text-transform:uppercase;text-align:right;margin-top:4rem;}
+
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;}
+.card{border:1px solid var(--border2);border-radius:var(--radius);padding:2rem;background:var(--card-bg);transition:border-color .25s,transform .25s,background var(--transition);}
+.card:hover{border-color:var(--gold-border);transform:translateY(-3px);}
+.card-icon{font-size:1.6rem;margin-bottom:1rem;}
+.card h3{font-size:1rem;}
+.card p{font-size:.9rem;color:var(--ink-muted);margin-top:.5rem;}
+.card.card-green{border-color:var(--green-border);}
+.card.card-green:hover{border-color:var(--green);background:var(--green-bg);}
+
+/* STEPS */
+.steps{display:flex;flex-direction:column;gap:2.5rem;}
+.step{display:grid;grid-template-columns:56px 1fr;gap:1.5rem;align-items:start;}
+.step-num{font-family:var(--font-mono);font-size:.75rem;font-weight:500;color:var(--gold);border:1px solid var(--gold-border);width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--gold-bg);flex-shrink:0;}
+.step-num.step-green{color:var(--green);border-color:var(--green-border);background:var(--green-bg);}
+.step-body{border-bottom:1px solid var(--border);padding-bottom:2rem;}
+.step:last-child .step-body{border-bottom:none;}
+.step-body h3{font-size:1.05rem;}
+.step-body p{font-size:.92rem;color:var(--ink-muted);margin-top:.4rem;}
+.step-badge{display:inline-block;margin-top:.6rem;font-family:var(--font-mono);font-size:.65rem;color:var(--gold);background:var(--gold-bg);border:1px solid var(--gold-border);padding:.2rem .7rem;border-radius:4px;letter-spacing:.04em;}
+.step-badge.badge-green{color:var(--green);background:var(--green-bg);border-color:var(--green-border);}
+
+/* TOKENOMICS */
+.token-hero{text-align:center;padding:3rem;border:1px solid var(--gold-border);border-radius:var(--radius);background:var(--gold-bg);margin-bottom:3rem;}
+.token-hero .big{font-family:var(--font-head);font-size:clamp(2rem,4vw,3rem);font-weight:700;color:var(--gold);display:block;margin:.5rem 0;}
+.token-hero .note{font-family:var(--font-mono);font-size:.75rem;color:var(--ink-muted);letter-spacing:.06em;}
+.token-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:.6rem;margin-top:1.5rem;}
+.token-tag{font-family:var(--font-mono);font-size:.65rem;color:var(--ink-muted);border:1px solid var(--border2);padding:.3rem .8rem;border-radius:4px;letter-spacing:.04em;}
+.alloc-item{display:flex;justify-content:space-between;align-items:baseline;padding:1rem 0;border-bottom:1px solid var(--border);}
+.alloc-item:last-child{border-bottom:none;}
+.alloc-pct{font-family:var(--font-head);font-weight:700;color:var(--gold);font-size:1.1rem;min-width:80px;}
+.alloc-label{font-size:.92rem;color:var(--ink-soft);}
+
+/* ICO */
+.ico-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1rem;margin:2.5rem 0;}
+.ico-card{text-align:center;padding:1.5rem 1rem;border:1px solid var(--border2);border-radius:var(--radius);background:var(--card-bg);transition:border-color .25s,background var(--transition);}
+.ico-card.active{border-color:var(--gold);background:var(--gold-bg);}
+.ico-card .round{font-family:var(--font-mono);font-size:.65rem;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.08em;}
+.ico-card .price{font-family:var(--font-head);font-size:1.35rem;font-weight:700;color:var(--ink);display:block;margin:.4rem 0;}
+.ico-card .status{font-family:var(--font-mono);font-size:.6rem;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;}
+.ico-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:2rem;}
+.ico-stat{text-align:center;padding:1rem;border:1px solid var(--border);border-radius:8px;}
+.ico-stat .v{font-family:var(--font-head);font-weight:700;color:var(--ink);font-size:1.3rem;display:block;}
+.ico-stat .l{font-family:var(--font-mono);font-size:.6rem;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.08em;margin-top:.3rem;display:block;}
+
+/* MONETARY POLICY */
+.policy-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:3rem;}
+.policy-stat{text-align:center;padding:1.2rem;border:1px solid var(--border2);border-radius:var(--radius);background:var(--card-bg);}
+.policy-stat .v{font-family:var(--font-head);font-weight:700;color:var(--gold);font-size:1.3rem;display:block;}
+.policy-stat .l{font-family:var(--font-mono);font-size:.6rem;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.08em;margin-top:.3rem;display:block;}
+.split-bar{display:grid;grid-template-columns:2fr 0.5fr 9.75fr;gap:4px;height:40px;border-radius:8px;overflow:hidden;margin:2rem 0;}
+.split-bar div{display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:.65rem;font-weight:500;color:var(--bg);border-radius:6px;}
+.split-bar .s-treasury{background:var(--gold);}
+.split-bar .s-burn{background:var(--red);}
+.split-bar .s-merchant{background:var(--green);}
+.split-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin-top:1.5rem;}
+.split-legend-item{padding:1.2rem;border:1px solid var(--border2);border-radius:var(--radius);background:var(--card-bg);}
+.split-legend-item strong{display:block;font-family:var(--font-head);color:var(--ink);margin-bottom:.3rem;}
+.split-legend-item span{font-family:var(--font-mono);font-size:.7rem;color:var(--gold);}
+.golden-rule{margin-top:2.5rem;padding:2rem;border:1px solid var(--gold-border);border-radius:var(--radius);background:var(--gold-bg);text-align:center;}
+.golden-rule h4{font-size:1rem;color:var(--gold);margin-bottom:.5rem;}
+.golden-rule p{font-size:.92rem;color:var(--ink-soft);max-width:560px;margin:0 auto;}
+
+/* CASH-IN SECTION — NEW */
+.cashin-flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:2rem;margin-top:2.5rem;}
+.cashin-card{padding:2rem;border:1px solid var(--green-border);border-radius:var(--radius);background:var(--green-bg);transition:border-color .25s,transform .25s;}
+.cashin-card:hover{border-color:var(--green);transform:translateY(-3px);}
+.cashin-card .cc-num{font-family:var(--font-mono);font-size:.7rem;color:var(--green);letter-spacing:.08em;margin-bottom:.6rem;}
+.cashin-card h3{color:var(--ink);}
+.cashin-card p{font-size:.9rem;color:var(--ink-muted);margin-top:.5rem;}
+.cashin-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-top:2.5rem;}
+.cashin-stat{text-align:center;padding:1.2rem;border:1px solid var(--green-border);border-radius:var(--radius);background:var(--green-bg);}
+.cashin-stat .v{font-family:var(--font-head);font-weight:700;color:var(--green);font-size:1.3rem;display:block;}
+.cashin-stat .l{font-family:var(--font-mono);font-size:.6rem;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.08em;margin-top:.3rem;display:block;}
+.cashin-highlight{margin-top:2.5rem;padding:2rem;border:1px solid var(--green-border);border-radius:var(--radius);background:var(--green-bg);text-align:center;}
+.cashin-highlight h4{font-size:1rem;color:var(--green);margin-bottom:.5rem;}
+.cashin-highlight p{font-size:.92rem;color:var(--ink-soft);max-width:600px;margin:0 auto;}
+
+/* ROADMAP */
+.timeline{position:relative;padding-left:3rem;}
+.timeline::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:2px;background:var(--border2);}
+.tl-item{position:relative;margin-bottom:3rem;}
+.tl-dot{position:absolute;left:-3rem;top:.35rem;width:24px;height:24px;border-radius:50%;border:2px solid var(--gold);background:var(--bg);display:flex;align-items:center;justify-content:center;transition:background var(--transition);}
+.tl-dot.active{background:var(--gold);}
+.tl-dot.active::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--bg);}
+.tl-phase{font-family:var(--font-mono);font-size:.7rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3rem;}
+.tl-title{font-family:var(--font-head);font-size:1.15rem;font-weight:700;color:var(--ink);margin-bottom:.6rem;}
+.tl-item ul{list-style:none;padding:0;}
+.tl-item li{font-size:.88rem;color:var(--ink-muted);padding:.3rem 0 .3rem 1.2rem;position:relative;}
+.tl-item li::before{content:'→';position:absolute;left:0;color:var(--gold);font-size:.8rem;}
+.tl-item li.tl-new{color:var(--green);}
+.tl-item li.tl-new::before{color:var(--green);}
+
+/* TEAM */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;}
+.team-card{padding:2rem;border:1px solid var(--border2);border-radius:var(--radius);background:var(--card-bg);text-align:center;transition:border-color .25s,background var(--transition);}
+.team-card:hover{border-color:var(--gold-border);}
+.team-avatar{width:64px;height:64px;border-radius:50%;background:var(--gold-bg);border:2px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin:0 auto 1rem;}
+.team-card h3{font-size:1rem;}
+.team-card .role{font-family:var(--font-mono);font-size:.7rem;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;margin-bottom:.6rem;display:block;}
+.team-card p{font-size:.85rem;color:var(--ink-muted);}
+
+/* WHITEPAPER BANNER */
+.wp-banner{text-align:center;padding:3rem;border:1px solid var(--gold-border);border-radius:var(--radius);background:var(--gold-bg);}
+.wp-banner h2{margin-bottom:.8rem;}
+.wp-banner p{max-width:600px;margin:0 auto 1.5rem;color:var(--ink-muted);font-size:.95rem;}
+
+/* FOOTER */
+footer{padding:3rem 2rem 2rem;border-top:1px solid var(--border);text-align:center;transition:border-color var(--transition);}
+footer p{font-size:.78rem;color:var(--ink-faint);}
+footer a{color:var(--gold);}
+
+/* BUTTONS */
+.btn{display:inline-block;font-family:var(--font-mono);font-size:.78rem;font-weight:500;letter-spacing:.05em;text-transform:uppercase;padding:.75rem 1.6rem;border-radius:8px;transition:background .2s,color .2s,border-color .2s;cursor:pointer;border:none;}
+.btn-gold{background:var(--gold);color:var(--bg);}
+.btn-gold:hover{background:var(--gold2);color:var(--bg);}
+.btn-outline{background:transparent;border:1px solid var(--gold-border);color:var(--gold);}
+.btn-outline:hover{background:var(--gold-bg);border-color:var(--gold);}
+.btn-green{background:var(--green);color:var(--bg);}
+.btn-green:hover{opacity:.9;color:var(--bg);}
+
+/* UTILS */
+.text-gold{color:var(--gold);}.text-green{color:var(--green);}
+.text-center{text-align:center;}.mb-1{margin-bottom:1rem;}.mb-2{margin-bottom:2rem;}.mb-3{margin-bottom:3rem;}.mt-2{margin-top:2rem;}.mt-3{margin-top:3rem;}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s,transform .7s;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+.disclaimer{font-family:var(--font-mono);font-size:.65rem;color:var(--ink-faint);text-align:center;margin-top:1rem;letter-spacing:.02em;}
+.new-badge{display:inline-block;font-family:var(--font-mono);font-size:.55rem;font-weight:500;color:var(--bg);background:var(--green);padding:.15rem .5rem;border-radius:3px;letter-spacing:.06em;text-transform:uppercase;vertical-align:middle;margin-left:.5rem;}
+@media(max-width:600px){
+  section{padding:4rem 1.2rem;}
+  .hero-stats{grid-template-columns:1fr 1fr;}
+  .step{grid-template-columns:1fr;gap:.8rem;}
+  .step-num{width:auto;height:auto;padding:.3rem .8rem;display:inline-flex;}
+  .ico-grid{grid-template-columns:1fr 1fr;}
+  .cashin-flow{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ NAVBAR ═══ -->
+<nav class="nav">
+<div class="nav-inner">
+  <a href="#hero" class="nav-logo">Pay<span>Duka</span></a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#about">About</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#cashin">Cash-In</a></li>
+    <li><a href="#tokenomics">Tokenomics</a></li>
+    <li><a href="#policy">Monetary Policy</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#team">Team</a></li>
+    <li><a href="#whitepaper">Whitepaper</a></li>
+    <li><a href="#collaborate">Collaborate</a></li>
+    <li><a href="https://payduka.xyz/ico.html" class="nav-cta">Buy PDuka</a></li>
+  </ul>
+  <div style="display:flex;align-items:center;gap:.6rem;">
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"></button>
+    <button class="burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero" id="hero">
+<div class="wrap">
+  <span class="hero-badge">Built for Africa · Powered by Polygon</span>
+  <h1>Retail Payments Reimagined<br><em>on Blockchain</em></h1>
+  <p class="hero-desc">PayDuka empowers merchants with instant, ultra-low-cost crypto payments — while enabling the unbanked, rewarding communities, and building Africa's first cash-in merchant network and Play-to-Earn retail ecosystem.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><span class="val">21B</span><span class="lbl">PDuka Total Supply</span></div>
+    <div class="hero-stat"><span class="val">44M+</span><span class="lbl">Target SMEs</span></div>
+    <div class="hero-stat"><span class="val">&lt;$0.01</span><span class="lbl">Per Transaction</span></div>
+    <div class="hero-stat"><span class="val">$800B+</span><span class="lbl">African Retail Mkt</span></div>
+    <div class="hero-stat"><span class="val">8–15%</span><span class="lbl">Staking APY</span></div>
+    <div class="hero-stat" style="border-color:var(--green-border);"><span class="val text-green">400M+</span><span class="lbl">Unbanked Adults</span></div>
+  </div>
+  <p class="page-marker">PD · 01</p>
+</div>
+</section>
+
+<!-- ═══ ABOUT ═══ -->
+<section id="about" style="background:var(--bg2);transition:background var(--transition);">
+<div class="wrap reveal">
+  <span class="section-num">// About PayDuka</span>
+  <div class="section-rule"></div>
+  <h2>Africa's Retail Payment Revolution</h2>
+  <p class="subtitle">PayDuka is a blockchain-powered retail ecosystem built on Polygon, designed to eliminate cash dependency, reduce transaction costs by up to 95%, and extend financial access to millions of unbanked Africans — starting now.</p>
+  <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+    <div class="card">
+      <div class="card-icon">💳</div>
+      <h3>Retail Payments</h3>
+      <p>Accept crypto &amp; fiat at any PoS. Instant stablecoin settlement to your merchant wallet.</p>
+    </div>
+    <div class="card card-green">
+      <div class="card-icon">💵</div>
+      <h3>Cash-In Network <span class="new-badge">New</span></h3>
+      <p>Customers deposit cash at any PayDuka merchant. Wallet loaded instantly. No bank account needed.</p>
+    </div>
+    <div class="card card-green">
+      <div class="card-icon">🔄</div>
+      <h3>Cash Remittance <span class="new-badge">New</span></h3>
+      <p>Send money person-to-person via the merchant network. Receiver collects cash at any PayDuka point.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏦</div>
+      <h3>Staking</h3>
+      <p>Earn 8–15% APY by staking PDuka with 30–365 day lock-ups. Passive income for all.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🎮</div>
+      <h3>Play-to-Earn</h3>
+      <p>Mobile games that reward users with real PDuka tokens daily.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🗳️</div>
+      <h3>Governance</h3>
+      <p>Token holders vote on protocol upgrades &amp; ecosystem decisions. 1 staked PDuka = 1 vote.</p>
+    </div>
+  </div>
+  <p class="page-marker">PD · 02</p>
+</div>
+</section>
+
+<!-- ═══ HOW IT WORKS ═══ -->
+<section id="how">
+<div class="wrap reveal">
+  <span class="section-num">// How It Works</span>
+  <div class="section-rule"></div>
+  <h2>Card Payment Flow Reimagined for Africa</h2>
+  <p class="subtitle">Every card swipe on a PayDuka PoS triggers instant on-chain settlement — merchants get paid immediately, fees are reimbursed, and PDuka supply deflates with every transaction.</p>
+  <div class="steps">
+    <div class="step"><div class="step-num">01</div><div class="step-body"><h3>💳 Customer Taps or Swipes</h3><p>The merchant's PayDuka terminal accepts the payment. The PoS broadcasts a signed transaction to Polygon in under 2 seconds.</p><span class="step-badge">sub-2s response</span></div></div>
+    <div class="step"><div class="step-num">02</div><div class="step-body"><h3>🔗 On-Chain Settlement</h3><p>Polygon confirms the block. The stablecoin (USDC/USDT) is transferred directly to the merchant wallet — no bank, no delays.</p><span class="step-badge">gas &lt; $0.01</span></div></div>
+    <div class="step"><div class="step-num">03</div><div class="step-body"><h3>🔥 PDuka Burn &amp; Reward</h3><p>0.1% of each transaction burns PDuka tokens, reducing supply. Both merchant and customer earn PDuka loyalty rewards automatically.</p><span class="step-badge">deflationary</span></div></div>
+    <div class="step"><div class="step-num">04</div><div class="step-body"><h3>📊 Real-Time Dashboard</h3><p>Merchants see live revenue, PDuka earned, and transaction history. Export to any accounting software. Full on-chain audit trail.</p><span class="step-badge">fully transparent</span></div></div>
+    <div class="step"><div class="step-num">05</div><div class="step-body"><h3>🌍 Ecosystem Growth</h3><p>PDuka earned can be staked for APY, used in Play-to-Earn games, or held for governance. Every transaction strengthens the entire ecosystem.</p><span class="step-badge">8–15% staking · P2E games</span></div></div>
+  </div>
+  <p class="page-marker">PD · 03</p>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- ═══ CASH-IN / REMITTANCE — NEW SECTION ═══ -->
+<!-- ═══════════════════════════════════════════════ -->
+<section id="cashin" style="background:var(--bg2);transition:background var(--transition);">
+<div class="wrap reveal">
+  <span class="section-num" style="color:var(--green);">// Cash-In &amp; Remittance Network <span class="new-badge">New</span></span>
+  <div class="section-rule" style="background:var(--green);"></div>
+  <h2>Reload Your Wallet with <span class="text-green">Cash</span>. Send Money <span class="text-green">Anywhere</span>.</h2>
+  <p class="subtitle">Over 400 million African adults have no bank account. PayDuka turns every merchant in the network into a cash-in point and remittance agent — no bank branch, no ATM, no card required.</p>
+
+  <!-- Market context stats -->
+  <div class="cashin-stats">
+    <div class="cashin-stat"><span class="v">400M+</span><span class="l">Unbanked Adults in Africa</span></div>
+    <div class="cashin-stat"><span class="v">44M</span><span class="l">MSMEs Still Cash-Only</span></div>
+    <div class="cashin-stat"><span class="v">$100B</span><span class="l">African Remittances/Year</span></div>
+    <div class="cashin-stat"><span class="v">7.4%</span><span class="l">Avg Remittance Cost to Africa</span></div>
+    <div class="cashin-stat"><span class="v">70%</span><span class="l">Intra-SADC Flows Are Informal</span></div>
+    <div class="cashin-stat"><span class="v">400K+</span><span class="l">Spaza Shops in SA Alone</span></div>
+  </div>
+
+  <!-- How Cash-In Works -->
+  <h3 class="mt-3 mb-2" style="color:var(--green);">How Cash-In Works</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num step-green">01</div>
+      <div class="step-body">
+        <h3>💵 Walk Into Any PayDuka Merchant</h3>
+        <p>The customer visits any spaza shop, convenience store, or retailer in the PayDuka network. No appointment, no forms, no bank account needed — just cash and a phone number or PayDuka wallet ID.</p>
+        <span class="step-badge badge-green">zero paperwork</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num step-green">02</div>
+      <div class="step-body">
+        <h3>📱 Merchant Enters Deposit on PoS</h3>
+        <p>The merchant opens the PayDuka app, selects "Cash-In", enters the customer's wallet ID or phone number, and keys in the deposit amount. Customer hands over cash. Merchant confirms.</p>
+        <span class="step-badge badge-green">merchant verified</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num step-green">03</div>
+      <div class="step-body">
+        <h3>⚡ Instant On-Chain Credit</h3>
+        <p>PayDuka's smart contract mints the equivalent ZARP (ZAR-pegged stablecoin) directly into the customer's wallet on Polygon. The customer sees the balance update in under 2 seconds. Both parties receive an SMS and in-app confirmation.</p>
+        <span class="step-badge badge-green">sub-2s settlement</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num step-green">04</div>
+      <div class="step-body">
+        <h3>💰 Merchant Earns Commission</h3>
+        <p>The merchant earns a flat commission on every cash-in transaction — an additional revenue stream on top of normal sales. Commissions are credited in ZARP and can be withdrawn or spent immediately. The more deposits processed, the more the merchant earns.</p>
+        <span class="step-badge badge-green">new revenue stream</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- How Cash Remittance Works -->
+  <h3 class="mt-3 mb-2" style="color:var(--green);">How Cash Remittance Works</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num step-green">R1</div>
+      <div class="step-body">
+        <h3>🔄 Sender Deposits Cash at Merchant A</h3>
+        <p>A worker in Johannesburg walks into a PayDuka merchant, hands over R500 in cash, and provides the recipient's phone number in another city — or even another country. The sender pays a flat fee of R5–R10 (vs R37–R74 at traditional remittance services charging 7.4%).</p>
+        <span class="step-badge badge-green">flat fee · up to 90% cheaper</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num step-green">R2</div>
+      <div class="step-body">
+        <h3>⚡ Instant Transfer via Blockchain</h3>
+        <p>The ZARP equivalent is transferred on Polygon in under 2 seconds — no SWIFT, no correspondent banks, no 3-day wait. The recipient receives an SMS notification immediately with a unique collection code.</p>
+        <span class="step-badge badge-green">sub-2s · cross-border capable</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num step-green">R3</div>
+      <div class="step-body">
+        <h3>💵 Recipient Collects Cash at Merchant B</h3>
+        <p>The recipient walks into any PayDuka merchant in their area — a spaza shop in Limpopo, a tuck shop in Nairobi, a convenience store in Maputo. They present their code or phone number, and the merchant dispenses cash. Alternatively, the recipient can keep the funds in their PayDuka wallet and spend digitally.</p>
+        <span class="step-badge badge-green">collect anywhere · or keep digital</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Why this matters -->
+  <div class="cashin-flow mt-3">
+    <div class="cashin-card">
+      <div class="cc-num">MERCHANT BENEFIT</div>
+      <h3>New Revenue Without New Inventory</h3>
+      <p>Every cash-in or cash-out transaction earns the merchant a commission — turning existing foot traffic into financial-services revenue. M-Pesa agents earn up to 40% of their income from commissions alone. PayDuka brings the same model on-chain.</p>
+    </div>
+    <div class="cashin-card">
+      <div class="cc-num">CUSTOMER BENEFIT</div>
+      <h3>Financial Access Without a Bank</h3>
+      <p>No bank account required. No minimum balance. No monthly fees. Customers load their PayDuka wallet with cash at any merchant and use it to pay bills, buy airtime, send money, or shop at any PayDuka-accepting store — all from their phone.</p>
+    </div>
+    <div class="cashin-card">
+      <div class="cc-num">NETWORK EFFECT</div>
+      <h3>Every Merchant Is a Branch</h3>
+      <p>Standard Bank expanded Instant Money to 400,000+ cashout points at spaza shops — proving the model. PayDuka goes further: merchants are both payment acceptance points AND cash-in/cash-out agents, creating a dual-revenue loop that accelerates adoption.</p>
+    </div>
+  </div>
+
+  <div class="cashin-highlight mt-3">
+    <h4>🌍 The Cash-In Flywheel</h4>
+    <p>More merchants → more cash-in points → more wallets funded → more digital payments at merchants → more merchant revenue → more merchants join. The cash-in network is the growth engine that makes the entire PayDuka ecosystem self-reinforcing.</p>
+  </div>
+
+  <p class="page-marker" style="color:var(--green);">PD · 04</p>
+</div>
+</section>
+
+<!-- ═══ TOKENOMICS ═══ -->
+<section id="tokenomics">
+<div class="wrap reveal">
+  <span class="section-num">// Tokenomics</span>
+  <div class="section-rule"></div>
+  <h2>PDuka Token Economics</h2>
+  <p class="subtitle">A deflationary utility token powering every layer of the PayDuka ecosystem — payments, staking, cash-in rewards, gaming, and governance.</p>
+  <div class="token-hero">
+    <span class="note">Total Fixed Supply</span>
+    <span class="big">21,000,000,000</span>
+    <span class="note">PDuka Tokens · No additional minting ever</span>
+    <div class="token-tags">
+      <span class="token-tag">ERC-20</span><span class="token-tag">Polygon L2</span><span class="token-tag">Deflationary</span><span class="token-tag">Burn Mechanism</span><span class="token-tag">Live on Mainnet</span>
+    </div>
+  </div>
+  <h3 class="mb-2">Token Utility</h3>
+  <div class="cards mb-3" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+    <div class="card"><div class="card-icon">💳</div><h3>Payments</h3><p>30–60% merchant fee discount vs traditional card processing.</p></div>
+    <div class="card"><div class="card-icon">💰</div><h3>Staking</h3><p>8–15% APY with 30–365 day lock-up periods.</p></div>
+    <div class="card card-green"><div class="card-icon">💵</div><h3>Cash-In Rewards <span class="new-badge">New</span></h3><p>Merchants and customers earn PDuka on every cash deposit and remittance transaction.</p></div>
+    <div class="card"><div class="card-icon">🎮</div><h3>Gaming</h3><p>Entry fees, in-game rewards, and tournament prizes.</p></div>
+    <div class="card"><div class="card-icon">🗳️</div><h3>Governance</h3><p>1 staked PDuka = 1 vote on protocol decisions.</p></div>
+  </div>
+  <h3 class="mb-2">Token Allocation</h3>
+  <div style="max-width:640px;">
+    <div class="alloc-item"><span class="alloc-pct">38.05%</span><span class="alloc-label">Ecosystem Growth — 8.4B tokens · User incentives, merchant onboarding, cash-in agent rewards</span></div>
+    <div class="alloc-item"><span class="alloc-pct">20.00%</span><span class="alloc-label">Staking Rewards — 4.2B tokens · 5-year yield distribution</span></div>
+    <div class="alloc-item"><span class="alloc-pct">15.00%</span><span class="alloc-label">Protocol Development — 3.15B tokens · 24-month vesting</span></div>
+    <div class="alloc-item"><span class="alloc-pct">15.00%</span><span class="alloc-label">Liquidity Provision — 3.15B tokens · CEX/DEX market making</span></div>
+    <div class="alloc-item"><span class="alloc-pct">10.00%</span><span class="alloc-label">Team &amp; Advisors — 2.1B tokens · 6-month cliff, 24-month linear vest</span></div>
+    <div class="alloc-item"><span class="alloc-pct">0.95%</span><span class="alloc-label">ICO / Presale — 200M tokens · Seed, Round 1, Round 2</span></div>
+  </div>
+  <p class="page-marker">PD · 05</p>
+</div>
+</section>
+
+<!-- ═══ ICO ═══ -->
+<section id="ico" style="background:var(--bg2);transition:background var(--transition);">
+<div class="wrap reveal">
+  <span class="section-num">// ICO — Seed Round Live Now</span>
+  <div class="section-rule"></div>
+  <h2>Get PDuka at <span class="text-gold">Seed Price</span></h2>
+  <p class="subtitle">Buy before DEX listing. Seed round tokens available at $0.005 — 2× cheaper than Round 2. Polygon Mainnet. Pay with USDC or POL.</p>
+  <div class="ico-grid">
+    <div class="ico-card active"><span class="round">Seed Round</span><span class="price">$0.005</span><span class="status">Live Now</span></div>
+    <div class="ico-card"><span class="round">Round 1</span><span class="price">$0.008</span><span class="status">Upcoming</span></div>
+    <div class="ico-card"><span class="round">Round 2</span><span class="price">$0.010</span><span class="status">Upcoming</span></div>
+    <div class="ico-card"><span class="round">DEX Listing</span><span class="price">$0.010+</span><span class="status">Target</span></div>
+  </div>
+  <div class="ico-stats">
+    <div class="ico-stat"><span class="v">1B</span><span class="l">Seed Tokens Available</span></div>
+    <div class="ico-stat"><span class="v">$0.005</span><span class="l">Current Price</span></div>
+    <div class="ico-stat"><span class="v">$5M</span><span class="l">Target Raise</span></div>
+    <div class="ico-stat"><span class="v">Polygon</span><span class="l">Network</span></div>
+  </div>
+  <div class="text-center mt-3"><a href="https://payduka.xyz/ico.html" class="btn btn-gold">Buy PDuka Now</a></div>
+  <p class="disclaimer">Not financial advice. Cryptocurrency investments carry risk. Participate responsibly.</p>
+  <p class="page-marker">PD · 06</p>
+</div>
+</section>
+
+<!-- ═══ MONETARY POLICY ═══ -->
+<section id="policy">
+<div class="wrap reveal">
+  <span class="section-num">// Monetary Policy</span>
+  <div class="section-rule"></div>
+  <h2>A Transparent, Self-Sustaining Token Economy</h2>
+  <p class="subtitle">Designed to power African commerce — forever. Fixed supply, perpetual burns, circular treasury. Cash-in transactions feed the same deflationary engine.</p>
+  <div class="policy-stats">
+    <div class="policy-stat"><span class="v">21B</span><span class="l">Total Supply</span></div>
+    <div class="policy-stat"><span class="v">Never</span><span class="l">New Minting</span></div>
+    <div class="policy-stat"><span class="v">Perpetual</span><span class="l">Burn Model</span></div>
+    <div class="policy-stat"><span class="v">Polygon</span><span class="l">Network</span></div>
+  </div>
+  <h3 class="mb-1">The 3-Way Split</h3>
+  <p class="mb-2" style="max-width:640px;">Every payment AND every cash-in/cash-out transaction processed through the PayDuka network triggers the same automated on-chain split — increasing treasury, burning supply, and settling value instantly.</p>
+  <div class="split-bar">
+    <div class="s-treasury">2%</div>
+    <div class="s-burn">0.5%</div>
+    <div class="s-merchant">97.5%</div>
+  </div>
+  <div class="split-legend">
+    <div class="split-legend-item"><span>2%</span><strong>Treasury Return</strong><p style="font-size:.85rem;color:var(--ink-muted);margin-top:.3rem;">Returns to PayDuka's protocol treasury. Continuously refills the reserve used for future settlements.</p></div>
+    <div class="split-legend-item"><span>0.5%</span><strong>Permanent Burn 🔥</strong><p style="font-size:.85rem;color:var(--ink-muted);margin-top:.3rem;">Sent to the burn address and removed from the 21B supply forever.</p></div>
+    <div class="split-legend-item"><span>97.5%</span><strong>Merchant / Customer Settlement</strong><p style="font-size:.85rem;color:var(--ink-muted);margin-top:.3rem;">Converts to ZARP and settles instantly — for payments, cash-in credits, and remittance payouts alike.</p></div>
+  </div>
+  <div class="golden-rule">
+    <h4>⚖️ PayDuka's Golden Rule</h4>
+    <p><strong>Skim Rate > Burn Rate.</strong> Treasury receives 2% every transaction, only 0.5% is burned. The treasury nets +1.5% per transaction — and cash-in volume multiplies the effect.</p>
+  </div>
+  <div class="text-center mt-3"><a href="https://payduka.xyz/monetary-policy.html" class="btn btn-outline">Read Full Monetary Policy</a></div>
+  <p class="page-marker">PD · 07</p>
+</div>
+</section>
+
+<!-- ═══ ROADMAP ═══ -->
+<section id="roadmap" style="background:var(--bg2);transition:background var(--transition);">
+<div class="wrap reveal">
+  <span class="section-num">// Roadmap</span>
+  <div class="section-rule"></div>
+  <h2>Building the Future</h2>
+  <p class="subtitle">A phased rollout that builds trust at every step — from prototype to continent-wide cash-in network and beyond.</p>
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-dot active"></div>
+      <span class="tl-phase">Q1 2026 — Foundation (Current)</span>
+      <div class="tl-title">Foundation</div>
+      <ul>
+        <li>Whitepaper publication &amp; public release</li>
+        <li>PDuka smart contract deployed to Polygon Mainnet</li>
+        <li>PDuka Token ICO live — Seed Round ($0.005 / PDUKA)</li>
+        <li>Mobile wallet prototype (iOS &amp; Android)</li>
+        <li class="tl-new">Cash-in module design &amp; agent onboarding flow prototyped</li>
+        <li>Legal &amp; compliance framework across target jurisdictions</li>
+        <li>Core team expansion &amp; advisor onboarding</li>
+      </ul>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <span class="tl-phase">Q2 2026 — Build &amp; Pilot</span>
+      <div class="tl-title">Build &amp; Pilot</div>
+      <ul>
+        <li>Merchant PoS terminal software launch (Android)</li>
+        <li>Pilot: 50 merchants in Nairobi &amp; Johannesburg</li>
+        <li class="tl-new">Cash-in pilot: 25 merchants activated as deposit/withdrawal agents</li>
+        <li class="tl-new">Remittance flow MVP: Joburg → Limpopo corridor live</li>
+        <li>Staking contract deployment on Polygon testnet</li>
+        <li>Third-party smart contract security audit</li>
+        <li>First exchange partnership announcements</li>
+      </ul>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <span class="tl-phase">Q3 2026 — Gaming &amp; Cash-In Scale</span>
+      <div class="tl-title">Gaming &amp; Cash-In Scale</div>
+      <ul>
+        <li>Play-to-Earn platform beta: Market Tycoon &amp; PayDuka Quiz</li>
+        <li>Full staking pool live on Polygon mainnet</li>
+        <li>500 active PoS terminals target</li>
+        <li class="tl-new">200+ cash-in agent merchants across 3 provinces</li>
+        <li class="tl-new">Cross-city remittance corridors: Johannesburg, Durban, Cape Town</li>
+        <li>Community governance module deployment</li>
+        <li>Ambassador programme across 5 African countries</li>
+      </ul>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <span class="tl-phase">Q4 2026 — Token Listing &amp; Expansion</span>
+      <div class="tl-title">Token Listing &amp; Expansion</div>
+      <ul>
+        <li>PDuka listed on OKX, KuCoin &amp; QuickSwap</li>
+        <li>Hardware PoS terminal with solar charging</li>
+        <li class="tl-new">Cross-border cash remittance: SA → Mozambique, SA → Zimbabwe corridors</li>
+        <li class="tl-new">1,000+ active cash-in agent points</li>
+        <li>2,000+ active merchants by year end</li>
+        <li>Stablecoin issuance roadmap published</li>
+      </ul>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <span class="tl-phase">2027+ — Scale Africa &amp; Beyond</span>
+      <div class="tl-title">Scale Africa &amp; Beyond</div>
+      <ul>
+        <li>Expansion to West Africa (Nigeria, Ghana) &amp; Southeast Asia</li>
+        <li>PDuka-pegged stablecoin for fiat-settled transactions</li>
+        <li class="tl-new">10,000+ cash-in/cash-out agent points across 8 countries</li>
+        <li class="tl-new">Full remittance network: intra-Africa corridors at &lt;1% cost vs 7.4% average</li>
+        <li>Developer SDK for third-party PoS integrations</li>
+        <li>20,000+ merchants, $100M+ annual payment volume</li>
+      </ul>
+    </div>
+  </div>
+  <p class="page-marker">PD · 08</p>
+</div>
+</section>
+
+<!-- ═══ TEAM ═══ -->
+<section id="team">
+<div class="wrap reveal">
+  <span class="section-num">// The Team</span>
+  <div class="section-rule"></div>
+  <h2>Meet the Builders</h2>
+  <p class="subtitle">A passionate team with deep roots in African markets, blockchain technology, and community growth.</p>
+  <div class="team-grid">
+    <div class="team-card"><div class="team-avatar">👨‍💼</div><h3>Mr X.G. Sikhosana</h3><span class="role">Founder &amp; CEO</span><p>Visionary entrepreneur and blockchain strategist. XG founded PayDuka to eliminate cash friction and financial exclusion across Africa's retail sector.</p></div>
+    <div class="team-card"><div class="team-avatar">👨‍💻</div><h3>Mr G. Jako</h3><span class="role">Chief Technology Officer</span><p>Blockchain architect and full-stack engineer overseeing PayDuka's Polygon smart contracts, PoS infrastructure, and mobile wallet development.</p></div>
+    <div class="team-card"><div class="team-avatar">👩‍💼</div><h3>Mrs J. Ndlangamandla</h3><span class="role">Head of Operations</span><p>Strategic operations leader driving merchant onboarding, partner relationships, and day-to-day ecosystem management across all markets.</p></div>
+    <div class="team-card"><div class="team-avatar">📣</div><h3>Mr N. Ndlangamandla</h3><span class="role">Head of Community &amp; Marketing</span><p>Community builder and brand strategist growing PayDuka's DeFi presence, managing ambassador networks and coordinating exchange listing campaigns.</p></div>
+  </div>
+  <p class="page-marker">PD · 09</p>
+</div>
+</section>
+
+<!-- ═══ WHITEPAPER ═══ -->
+<section id="whitepaper" style="background:var(--bg2);transition:background var(--transition);">
+<div class="wrap reveal">
+  <div class="wp-banner">
+    <span class="section-num">// Documentation</span>
+    <h2>PayDuka Whitepaper v3.0</h2>
+    <p>Our full technical whitepaper now covers the cash-in merchant network, cash remittance corridors, PIX-inspired payment model, card-advance engine, token economics, and complete roadmap.</p>
+    <a href="whitepaper.html" class="btn btn-gold" style="margin-right:.8rem;">Read Online</a>
+    <a href="https://payduka.xyz/PayDuka_Whitepaper_v2.0.pdf" class="btn btn-outline">Download PDF</a>
+  </div>
+  <p class="page-marker">PD · 10</p>
+</div>
+</section>
+
+<!-- ═══ COLLABORATE ═══ -->
+<section id="collaborate">
+<div class="wrap reveal">
+  <span class="section-num">// Collaborate</span>
+  <div class="section-rule"></div>
+  <h2>Join the Ecosystem</h2>
+  <p class="subtitle">PayDuka is bigger than one team. We're looking for builders, merchants, investors, and communities who share the vision.</p>
+  <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+    <div class="card"><div class="card-icon">🏪</div><h3>Merchant Partners</h3><p>Accept PDuka payments and earn cash-in commissions. Cut fees by up to 95%.</p></div>
+    <div class="card card-green"><div class="card-icon">💵</div><h3>Cash-In Agents <span class="new-badge">New</span></h3><p>Turn your shop into a deposit &amp; remittance point. Earn commission on every cash-in and cash-out.</p></div>
+    <div class="card"><div class="card-icon">💰</div><h3>Angel Investors</h3><p>Join our $2.5M angel round and be part of Africa's blockchain payment revolution.</p></div>
+    <div class="card"><div class="card-icon">👨‍💻</div><h3>Developers &amp; Builders</h3><p>Contribute to open-source smart contracts, PoS integrations, or build on the PayDuka SDK.</p></div>
+    <div class="card"><div class="card-icon">🌍</div><h3>Community Ambassadors</h3><p>Represent PayDuka in your city. Earn PDuka rewards for growing the network on the ground.</p></div>
+  </div>
+  <p class="page-marker">PD · 11</p>
+</div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <p style="margin-bottom:.5rem;"><a href="#hero" class="nav-logo" style="font-size:1.1rem;">Pay<span style="color:var(--gold);">Duka</span></a></p>
+  <p>Built for Africa · Powered by Polygon · <a href="mailto:info@payduka.xyz">info@payduka.xyz</a></p>
+  <p style="margin-top:.8rem;">© 2026 PayDuka. All rights reserved. PDuka tokens are not securities. This website does not constitute financial advice.</p>
+</footer>
+
+<!-- ═══ SCRIPTS ═══ -->
+<script>
+(function(){
+  const html=document.documentElement,btn=document.getElementById('themeToggle'),SK='pd-theme';
+  function set(t){html.setAttribute('data-theme',t);btn.textContent=t==='dark'?'☀️':'🌙';localStorage.setItem(SK,t);}
+  const s=localStorage.getItem(SK);set(s||'dark');
+  btn.addEventListener('click',function(){set(html.getAttribute('data-theme')==='dark'?'light':'dark');});
+})();
+(function(){
+  const b=document.getElementById('burger'),n=document.getElementById('navLinks');
+  b.addEventListener('click',function(){
+    n.classList.toggle('open');
+    const s=b.querySelectorAll('span'),o=n.classList.contains('open');
+    s[0].style.transform=o?'rotate(45deg) translate(5px,5px)':'none';
+    s[1].style.opacity=o?'0':'1';
+    s[2].style.transform=o?'rotate(-45deg) translate(5px,-5px)':'none';
+  });
+  n.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){
+    n.classList.remove('open');
+    const s=b.querySelectorAll('span');s[0].style.transform='none';s[1].style.opacity='1';s[2].style.transform='none';
+  });});
+})();
+(function(){
+  const els=document.querySelectorAll('.reveal');
+  const obs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting){x.target.classList.add('visible');obs.unobserve(x.target);}});},{threshold:.12});
+  els.forEach(function(el){obs.observe(el);});
+})();
+(function(){
+  const ss=document.querySelectorAll('section[id]'),ll=document.querySelectorAll('.nav-links a[href^="#"]');
+  window.addEventListener('scroll',function(){
+    let c='';ss.forEach(function(s){if(window.scrollY>=s.offsetTop-120)c=s.id;});
+    ll.forEach(function(a){a.classList.remove('active');if(a.getAttribute('href')==='#'+c)a.classList.add('active');});
+  });
+})();
+</script>
+</body>
+</html>
