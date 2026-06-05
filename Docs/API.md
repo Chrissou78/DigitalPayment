@@ -22,7 +22,6 @@ Authorization: Bearer <access_token> X-Device-Id: <device_fingerprint> X-App-Ver
 
 All responses follow this structure:
 
-```json
 {
   "data": { ... },          // Response payload (null on error)
   "meta": {
@@ -43,27 +42,30 @@ All responses follow this structure:
     }
   ]
 }
+
 Error Codes
 Code	HTTP	Description
-VALIDATION_ERROR	400	Request body fails validation
-INVALID_QR_PAYLOAD	400	QR code data is malformed or expired
-UNAUTHORIZED	401	Missing or invalid authentication token
-MFA_REQUIRED	401	Operation requires MFA verification
-FORBIDDEN	403	User lacks permission for this operation
-NOT_FOUND	404	Resource does not exist
+VALIDATION_ERROR	    400	Request body fails validation
+INVALID_QR_PAYLOAD	    400	QR code data is malformed or expired
+UNAUTHORIZED	        401	Missing or invalid authentication token
+MFA_REQUIRED	        401	Operation requires MFA verification
+FORBIDDEN	            403	User lacks permission for this operation
+NOT_FOUND	            404	Resource does not exist
 INSUFFICIENT_BALANCE	409	Wallet balance too low for operation
-WALLET_FROZEN	409	Wallet is frozen due to fraud alert
-MERCHANT_SUSPENDED	409	Merchant account is suspended
+WALLET_FROZEN	        409	Wallet is frozen due to fraud alert
+MERCHANT_SUSPENDED	    409	Merchant account is suspended
 ADVANCE_NOT_ELIGIBLE	409	Merchant not eligible for advance
 ADVANCE_CAP_EXCEEDED	409	Daily advance cap reached
-DUPLICATE_REQUEST	409	Idempotent request already processed
-TRANSACTION_EXPIRED	410	Transaction TTL exceeded
-RATE_LIMITED	429	Too many requests
-PAYMENT_RAIL_ERROR	502	External payment provider error
-INTERNAL_ERROR	500	Unhandled system error
-Endpoints
-Auth
-POST /auth/register
+DUPLICATE_REQUEST	    409	Idempotent request already processed
+TRANSACTION_EXPIRED	    410	Transaction TTL exceeded
+RATE_LIMITED	        429	Too many requests
+PAYMENT_RAIL_ERROR	    502	External payment provider error
+INTERNAL_ERROR	        500	Unhandled system error
+
+## Endpoints
+
+# Auth
+# POST /auth/register
 Register a new customer or merchant account.
 
 Request:
@@ -84,7 +86,8 @@ Response (201):
     "otpExpiresAt": "ISO8601"
   }
 }
-POST /auth/verify-otp
+
+# POST /auth/verify-otp
 Verify phone number OTP to activate account.
 
 Request:
@@ -109,17 +112,18 @@ Response (200):
     }
   }
 }
-POST /auth/login
+
+# POST /auth/login
 Authenticate with phone number and PIN.
 
-POST /auth/refresh
+# POST /auth/refresh
 Exchange refresh token for new access/refresh token pair.
 
-POST /auth/mfa/verify
+# POST /auth/mfa/verify
 Verify MFA challenge (SMS OTP or biometric token).
 
-Merchants
-POST /merchants/onboard
+# Merchants
+# POST /merchants/onboard
 Complete merchant onboarding (requires MERCHANT user type).
 
 Request:
@@ -156,10 +160,11 @@ Response (201):
     ]
   }
 }
-POST /merchants/{id}/documents
+
+# POST /merchants/{id}/documents
 Upload KYC document. Multipart form data.
 
-GET /merchants/{id}/qr-code
+# GET /merchants/{id}/qr-code
 Get merchant QR code data for display.
 
 Response (200):
@@ -172,7 +177,8 @@ Response (200):
     "merchantName": "Thabo's Grocery"
   }
 }
-GET /merchants/{id}/dashboard
+
+# GET /merchants/{id}/dashboard
 Get merchant dashboard summary data.
 
 Response (200):
@@ -199,8 +205,10 @@ Response (200):
     }
   }
 }
-Wallets
-GET /wallets/me
+
+# Wallets
+
+# GET /wallets/me
 Get current user's wallet balance and configuration.
 
 Response (200):
@@ -230,7 +238,8 @@ Response (200):
     }
   }
 }
-PUT /wallets/me/auto-refill
+
+# PUT /wallets/me/auto-refill
 Update auto-refill configuration.
 
 Request:
@@ -240,7 +249,8 @@ Request:
   "thresholdCents": 50000,
   "amountCents": 100000
 }
-POST /wallets/me/link-bank
+
+# POST /wallets/me/link-bank
 Initiate bank account linking via Stitch.
 
 Response (200):
@@ -252,16 +262,18 @@ Response (200):
     "expiresAt": "ISO8601"
   }
 }
-POST /wallets/me/manual-topup
+
+#  POST /wallets/me/manual-topup
 Initiate a manual top-up via PayShap or EFT.
 
-GET /wallets/me/ledger
+# GET /wallets/me/ledger
 Get wallet ledger entries (paginated).
 
 Query params: page, pageSize, fromDate, toDate, balanceType
 
-Transactions
-POST /transactions/wallet-payment
+# Transactions
+
+# POST /transactions/wallet-payment
 Initiate a wallet-to-wallet payment (customer → merchant).
 
 Request:
@@ -285,7 +297,8 @@ Response (201):
     "completedAt": "ISO8601"
   }
 }
-POST /transactions/bank-payment
+
+# POST /transactions/bank-payment
 Initiate a direct bank payment (customer without wallet → merchant).
 
 Response (201):
@@ -298,7 +311,8 @@ Response (201):
     "expiresAt": "ISO8601"
   }
 }
-POST /transactions/card-payment
+
+# POST /transactions/card-payment
 Initiate a card payment at merchant PoS.
 
 Request:
@@ -324,7 +338,8 @@ Response (201):
     }
   }
 }
-POST /transactions/{id}/accept-advance
+
+# POST /transactions/{id}/accept-advance
 Merchant accepts same-day advance on a card payment.
 
 Response (200):
@@ -338,7 +353,8 @@ Response (200):
     "expectedSettlementDate": "2026-06-08"
   }
 }
-POST /transactions/p2p-transfer
+
+# POST /transactions/p2p-transfer
 Send money to another PayDuka user.
 
 Request:
@@ -348,16 +364,18 @@ Request:
   "amountCents": 50000,
   "note": "Lunch money"
 }
-GET /transactions
+
+# GET /transactions
 List transactions (paginated, filterable).
 
 Query params: page, pageSize, fromDate, toDate, type, status, minAmountCents, maxAmountCents
 
-GET /transactions/{id}
+# GET /transactions/{id}
 Get transaction details including full event history.
 
-Settlements
-POST /settlements/withdraw
+# Settlements
+
+# POST /settlements/withdraw
 Merchant requests withdrawal to bank account.
 
 Request:
@@ -366,7 +384,8 @@ Request:
   "amountCents": 500000,
   "mfaToken": "otp_verification_token"
 }
-PUT /settlements/auto-settlement
+
+# PUT /settlements/auto-settlement
 Configure automatic settlement for merchant.
 
 Request:
@@ -376,33 +395,36 @@ Request:
   "thresholdCents": 1000000,
   "retainCents": 200000
 }
-GET /settlements
+
+# GET /settlements
 List settlement history (paginated).
 
-Webhooks (Internal — Not Exposed to Clients)
-POST /webhooks/stitch
+# Webhooks (Internal — Not Exposed to Clients)
+
+# POST /webhooks/stitch
 Receive Stitch payment confirmations, refund notifications, etc. Validates webhook signature. Writes to BullMQ for async processing.
 
-Admin (Requires ADMIN role)
-GET /admin/transactions
+# Admin (Requires ADMIN role)
+
+# GET /admin/transactions
 Full transaction search with advanced filters.
 
-GET /admin/merchants
+# GET /admin/merchants
 Merchant listing with onboarding status filter.
 
-POST /admin/merchants/{id}/verify
+# POST /admin/merchants/{id}/verify
 Approve or reject merchant KYC.
 
-GET /admin/fraud-queue
+# GET /admin/fraud-queue
 Get transactions pending fraud review.
 
-POST /admin/fraud-queue/{assessmentId}/review
+# POST /admin/fraud-queue/{assessmentId}/review
 Submit fraud review decision.
 
-GET /admin/reconciliation/daily
+# GET /admin/reconciliation/daily
 Get daily reconciliation report.
 
-GET /admin/dashboard/stats
+# GET /admin/dashboard/stats
 Get system-wide statistics for admin dashboard.
 
 Response (200):

@@ -1,0 +1,108 @@
+# ─────────────────────────────────────────────
+#  Payduka monorepo .gitignore
+# ─────────────────────────────────────────────
+
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Turborepo
+.turbo/
+
+# Environment & secrets  (NEVER commit real secrets)
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+
+# Build output / compiled
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# ── apps/api  (NestJS) ──
+apps/api/dist/
+
+# ── apps/admin-dashboard  (Next.js) ──
+.next/
+.vercel/
+next-env.d.ts
+
+# ── apps/merchant-app & apps/customer-app  (Expo / React Native) ──
+.expo/
+.expo-shared/
+web-build/
+# Native build artifacts
+ios/Pods/
+ios/build/
+android/.gradle/
+android/app/build/
+android/build/
+*.hprof
+# Signing material — keep these OUT of git
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+
+# ── contracts/  (Hardhat / Solidity) ──
+contracts/artifacts/
+contracts/cache/
+contracts/typechain/
+contracts/typechain-types/
+coverage/
+coverage.json
+# Deployment account keys, if any tooling drops them here
+contracts/.secret
+
+# ── infra/terraform ──
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!example.tfvars
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+
+# ── infra/docker ──
+# local bind-mount volumes, if you use them
+infra/data/
+infra/volumes/
+
+# ── Supabase (local dev) ──
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+
+# Testing
+.nyc_output/
+
+# Logs & runtime
+logs/
+*.log
+pids/
+*.pid
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini

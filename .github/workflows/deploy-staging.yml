@@ -1,0 +1,66 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [develop]
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "9"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build shared
+        run: cd packages/shared && pnpm build
+
+      - name: Build API
+        run: cd apps/api && pnpm build
+
+      - name: Build admin dashboard
+        run: cd apps/admin-dashboard && pnpm build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.STAGING_API_URL }}
+
+      # ── Run migrations ──
+      - name: Run database migrations
+        run: cd apps/api && pnpm migration:run
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+
+      # ── Deploy API (example: Docker + SSH) ──
+      - name: Build API Docker image
+        run: |
+          docker build -t payduka-api:staging -f apps/api/Dockerfile .
+
+      - name: Push to container registry
+        run: |
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ${{ vars.REGISTRY_URL }} -u ${{ vars.REGISTRY_USER }} --password-stdin
+          docker tag payduka-api:staging ${{ vars.REGISTRY_URL }}/payduka-api:staging
+          docker push ${{ vars.REGISTRY_URL }}/payduka-api:staging
+
+      # ── Deploy Admin (example: Vercel) ──
+      - name: Deploy admin to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+          working-directory: apps/admin-dashboard

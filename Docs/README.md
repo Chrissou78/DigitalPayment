@@ -57,7 +57,6 @@ payduka/ ├── apps/ │ ├── api/ # NestJS backend (monorepo root app)
 
 ### Local Development
 
-```bash
 # Clone the repository
 git clone https://github.com/payduka/payduka-platform.git
 cd payduka-platform

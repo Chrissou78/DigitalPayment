@@ -1,0 +1,7 @@
+export enum AdvanceStatus {
+  OFFERED = 'OFFERED',
+  OUTSTANDING = 'OUTSTANDING',
+  SETTLED = 'SETTLED',
+  OVERDUE = 'OVERDUE',
+  DEFAULTED = 'DEFAULTED',
+}

@@ -1,0 +1,11 @@
+node_modules
+.git
+.github
+*.md
+coverage
+.next
+.expo
+dist
+.env
+.env.*
+!.env.example

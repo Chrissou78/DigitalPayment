@@ -1,0 +1,26 @@
+{
+  "name": "payduka",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev:api": "turbo run dev --filter=@payduka/api",
+    "dev:merchant": "turbo run dev --filter=@payduka/merchant-app",
+    "dev:customer": "turbo run dev --filter=@payduka/customer-app",
+    "dev:admin": "turbo run dev --filter=@payduka/admin-dashboard",
+    "dev:all": "turbo run dev",
+    "build:all": "turbo run build",
+    "lint:all": "turbo run lint",
+    "test:all": "turbo run test",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "infra:reset": "docker compose -f infra/docker-compose.yml down -v && docker compose -f infra/docker-compose.yml up -d",
+    "contracts:compile": "cd contracts && npx hardhat compile",
+    "contracts:test": "cd contracts && npx hardhat test",
+    "contracts:deploy:testnet": "cd contracts && npx hardhat run scripts/deploy.ts --network amoy",
+    "contracts:deploy:mainnet": "cd contracts && npx hardhat run scripts/deploy.ts --network polygon"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  }
+}

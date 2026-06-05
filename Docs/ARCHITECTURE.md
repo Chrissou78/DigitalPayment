@@ -1,257 +1,319 @@
-# PayDuka — System Architecture Specification
+# PayDuka — System Architecture v3.0
 
-Version: 1.0
-Last Updated: 2026-06-05
-Status: APPROVED FOR DEVELOPMENT
-
----
-
-## 1. Architectural Principles
-
-### 1.1 Core Principles
-
-1. **Payments never fail silently.** Every payment operation either succeeds atomically
-   or fails explicitly with a clear error state. No partial updates. No orphaned records.
-
-2. **The ledger is the source of truth.** Wallet balances are always derived from the
-   append-only ledger. There is no mutable "balance" column. The current balance is the
-   sum of all ledger entries for that wallet. This makes the system inherently auditable
-   and eliminates an entire class of balance corruption bugs.
-
-3. **Event-sourced transactions.** Transaction records are never updated in place. Every
-   state change creates a new TransactionEvent record. The current state of a transaction
-   is determined by its most recent event. This provides a complete audit trail and
-   enables replaying transaction history for debugging or reconciliation.
-
-4. **Payment rails are pluggable.** The system communicates with payment providers
-   (Stitch, M-Pesa, card processors) through an abstraction layer. Swapping or adding
-   a payment provider requires implementing an interface, not modifying business logic.
-
-5. **Blockchain is decoupled from payments.** The Polygon blockchain layer (Phase 3)
-   records settlement proofs asynchronously. If the blockchain is unavailable, payments
-   continue uninterrupted. On-chain recording is an enhancement, not a dependency.
-
-6. **Fail open for reads, fail closed for writes.** If a cache is unavailable, the system
-   falls back to the database for reads (slower but correct). If any component required
-   for a financial write is unavailable, the operation is rejected rather than proceeding
-   in a degraded state.
-
-### 1.2 Non-Negotiable Constraints
-
-- All monetary arithmetic uses integer cents. No floating point. Ever.
-- All database operations that modify balances use explicit row-level locks and
-  single-transaction atomicity.
-- All external payment rail calls are idempotent (using external reference IDs).
-- All webhook handlers are idempotent (processing the same webhook twice produces
-  the same result).
-- All PII is encrypted at rest with AES-256 via AWS KMS.
-- No raw card data ever touches PayDuka's systems. Card data is handled exclusively
-  by the card acquiring partner (Stitch/PCI-compliant processor).
+> Built for Africa, Powered by Polygon
+> Last updated: 2026-06-05
 
 ---
 
-## 2. System Topology
+## 1. Design Philosophy
 
-### 2.1 High-Level Architecture
-
-┌─────────────────────────────────────────────────────────────────┐ │ CLIENT LAYER │ │ │ │ ┌──────────────┐ ┌──────────────┐ ┌──────────────────────┐ │ │ │ Customer App │ │ Merchant PoS │ │ Admin Dashboard │ │ │ │ React Native │ │ React Native │ │ Next.js │ │ │ └──────┬───────┘ └──────┬───────┘ └──────────┬───────────┘ │ └─────────┼─────────────────┼─────────────────────┼───────────────┘ │ │ │ │ HTTPS/WSS │ │ ▼ ▼ ▼ ┌─────────────────────────────────────────────────────────────────┐ │ API GATEWAY (AWS ALB) │ │ Rate Limiting · TLS Termination · WAF │ └─────────────────────────┬───────────────────────────────────────┘ │ ▼ ┌─────────────────────────────────────────────────────────────────┐ │ NESTJS APPLICATION │ │ (ECS Fargate Cluster) │ │ │ │ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────────┐ │ │ │ Auth │ │ Merchant │ │Transaction │ │ Wallet │ │ │ │ Module │ │ Module │ │ Module │ │ Module │ │ │ └────────────┘ └────────────┘ └────────────┘ └──────────────┘ │ │ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────────┐ │ │ │ Refill │ │ Payment │ │ Advance │ │ Fraud │ │ │ │ Module │ │ Rail Module│ │ Module │ │ Module │ │ │ └────────────┘ └────────────┘ └────────────┘ └──────────────┘ │ │ ┌────────────┐ ┌────────────┐ ┌────────────┐ │ │ │ Settlement │ │ Webhook │ │ Admin │ │ │ │ Module │ │ Module │ │ Module │ │ │ └────────────┘ └────────────┘ └────────────┘ │ └───────┬──────────────┬──────────────┬───────────────────────────┘ │ │ │ ▼ ▼ ▼ ┌──────────────┐ ┌──────────┐ ┌──────────────┐ │ PostgreSQL │ │ Redis │ │ BullMQ │ │ (RDS) │ │(Elasti- │ │ (Workers) │ │ │ │ Cache) │ │ │ │ - Ledger │ │ - Cache │ │ - Refill │ │ - Merchants │ │ - Session│ │ - Settlement │ │ - Txns │ │ - Rate │ │ - Webhooks │ │ - Audit │ │ Limit │ │ - Notify │ └──────────────┘ └──────────┘ └──────┬───────┘ │ ▼ ┌────────────────────────────┐ │ EXTERNAL SERVICES │ │ │ │ ┌─────────────────────┐ │ │ │ Stitch API │ │ │ │ - PayShap Request │ │ │ │ - Capitec Pay │ │ │ │ - DebiCheck │ │ │ │ - Card Acquiring │ │ │ │ - Account Linking │ │ │ └─────────────────────┘ │ │ ┌─────────────────────┐ │ │ │ AWS KMS │ │ │ │ (Key Management) │ │ │ └─────────────────────┘ │ │ ┌─────────────────────┐ │ │ │ AWS S3 │ │ │ │ (KYC Documents) │ │ │ └─────────────────────┘ │ │ ┌─────────────────────┐ │ │ │ Sentry │ │ │ │ (Error Tracking) │ │ │ └─────────────────────┘ │ └────────────────────────────┘
-
-
-### 2.2 Module Dependency Map
-
-Arrows indicate "depends on" relationships. Modules may only depend on modules
-they have an explicit arrow to. No circular dependencies are permitted.
-
-AuthModule ◄─── MerchantModule ▲ │ │ ▼ │ WalletModule ◄──── RefillModule │ ▲ │ │ ├──── TransactionModule ───► PaymentRailModule │ │ │ │ │ └─────► AdvanceModule │ │ │ └──► FraudModule │ ├──── SettlementModule ───► WalletModule │ ├──── WebhookModule ──────► TransactionModule │ PaymentRailModule │ └──── AdminModule ────────► (read access to all modules)
-
-
-### 2.3 Module Responsibilities
-
-#### AuthModule
-- User registration (customer and merchant)
-- Phone number verification via OTP
-- JWT access token issuance (15min expiry) and refresh token management (7 day expiry)
-- MFA enforcement (SMS OTP for merchants, biometric token for mobile apps)
-- Session management and device tracking
-- Password hashing (bcrypt, cost factor 12)
-- Rate limiting on auth endpoints (5 attempts per 15 minutes)
-
-#### MerchantModule
-- Merchant account creation and profile management
-- KYC document upload to S3 and verification workflow
-- Merchant risk tier management (NEW → STANDARD → TRUSTED)
-- Fee tier assignment based on volume and risk
-- QR code generation (merchant ID + metadata encoded)
-- Merchant search and listing for admin
-
-#### WalletModule
-- Wallet creation (one per customer, one per merchant)
-- Append-only ledger management
-- Balance calculation (sum of all ledger entries)
-- Balance types: AVAILABLE, PENDING, RESERVED
-- Atomic credit and debit operations with row-level locking
-- Wallet freeze/unfreeze for fraud cases
-- Auto-refill threshold and amount configuration
-- Balance history and statements
-
-#### TransactionModule
-- Transaction creation and state machine management
-- Event sourcing — all state transitions recorded as immutable events
-- Transaction types: WALLET_PAYMENT, BANK_PAYMENT, CARD_PAYMENT, P2P_TRANSFER,
-  WALLET_REFILL, MERCHANT_WITHDRAWAL, ADVANCE_CREDIT, ADVANCE_RECOVERY
-- QR code payload generation and validation
-- Transaction search, filtering, and reporting
-- Expiry handling (unpaid transactions expire after 5 minutes)
-
-#### RefillModule
-- Proactive refill scheduler (runs every 4 hours, checks all wallets below threshold)
-- Reactive refill trigger (fires after any payment drops wallet below threshold)
-- Refill execution via PayShap or DebiCheck through PaymentRailModule
-- Refill failure handling and retry logic
-- Concurrency control (Redis lock — one refill per wallet at a time)
-- Insufficient bank funds notification
-- Refill history tracking
-
-#### PaymentRailModule
-- Abstract PaymentRailProvider interface
-- StitchProvider implementation (PayShap Request, Capitec Pay, DebiCheck, Card)
-- Payment initiation and status polling
-- Webhook registration and signature verification
-- Idempotency key management for all external calls
-- Circuit breaker pattern for external service failures
-- Rail-specific error mapping to internal error codes
-
-#### AdvanceModule
-- Merchant eligibility assessment (30+ days history, <0.5% chargeback rate,
-  KYC verified, daily cap not exceeded)
-- Advance amount calculation (net settlement minus advance fee)
-- Advance crediting to merchant wallet
-- Outstanding advance tracking
-- Settlement reconciliation (match incoming card settlements to outstanding advances)
-- Advance fee revenue calculation and recording
-- Risk exposure monitoring (total outstanding advances vs. liquidity pool)
-
-#### FraudModule
-- Rule-based risk scoring engine
-- Per-transaction risk assessment returning LOW / MEDIUM / HIGH
-- Rule categories: velocity, amount, device, geolocation, behavior
-- Configurable rule thresholds (adjustable without code deployment)
-- Fraud alert generation for MEDIUM and HIGH scores
-- Manual review queue for HIGH-risk transactions
-- Merchant risk tier adjustment recommendations
-- Blocked device/IP list management
-
-#### SettlementModule
-- Merchant withdrawal processing (wallet → bank account)
-- Auto-settlement configuration (threshold-based automatic withdrawal)
-- Settlement batch management
-- Merchant rolling reserve calculation and release
-- Settlement reconciliation against bank confirmations
-- Settlement reporting and export
-
-#### WebhookModule
-- Dedicated endpoints for each payment provider's webhooks
-- Webhook signature verification
-- Idempotent processing (duplicate webhook detection via event ID)
-- Raw payload logging before processing
-- Durable queue write before acknowledgement (BullMQ)
-- Asynchronous processing by dedicated workers
-- Dead letter queue for failed webhook processing
-- Retry configuration per provider
-
-#### AdminModule
-- Role-based access control (VIEWER, OPERATOR, RISK_ANALYST, ADMINISTRATOR)
-- Real-time transaction dashboard (WebSocket-powered)
-- Merchant management interface
-- KYC verification workflow
-- Fraud alert review and action queue
-- Financial reporting (daily, weekly, monthly)
-- Reconciliation reports
-- System health dashboard
-- Audit log viewer
+PayDuka is a blockchain-powered retail payment platform where users
+never know they are using crypto. The entire blockchain layer is
+abstracted behind familiar UX patterns: Rand balances, QR payments,
+cash deposits, and bank transfers. The blockchain serves three
+purposes: deflationary tokenomics (burn), transparent treasury
+management, and verifiable audit trail. Everything else happens
+off-chain for speed, cost, and simplicity.
 
 ---
 
-## 3. Data Flow Patterns
+## 2. System Layers
 
-### 3.1 Wallet-to-Wallet Payment (Primary Flow)
+┌────────────────────────────────────────────────────────────┐
+│                     PRESENTATION LAYER                     │
+│                                                            │
+│ Customer App      Merchant PoS      Admin Panel            │
+│ (React Native)    (React Native)    (Next.js)              │
+│                                                            │
+│ Users see ZAR only.                                        │
+│ No wallets.  No gas.  No tokens.                           │
+└──────────────────────────────┬─────────────────────────────┘
+                               │
+                       REST API + WebSocket
+                               ▼
+┌──────────────────────────────────────────────────────────┐
+│                        ENGINE LAYER                      │
+│                                                          │
+│                   NestJS API   (apps/api/)               │
+│  ┌───────────────────────────────────────────────────┐   │
+│  │ PostgreSQL      Redis          BullMQ             │   │
+│  │ ledger          locks          refill             │   │
+│  │ wallets         cache          settlement         │   │
+│  │ transactions                   jobs               │   │
+│  │ KYC, staking                                      │   │
+│  └───────────────────────────────────────────────────┘   │
+│                                                          │
+│ Source of truth for all balances.                        │
+│ Payments, cash-ins, remittances, staking                 │
+│ are instant DB operations.  No gas.  No chain.           │
+└──────────────────────────────┬───────────────────────────┘
+                               │
+                  Hourly batch / 10-min oracle
+                               ▼
+┌──────────────────────────────────────────────────────────┐
+│                BLOCKCHAIN LAYER  (Polygon)               │
+│                                                          │
+│ PDukaToken      PDukaPool       PDukaOracle              │
+│ (ERC-20)        (custody)       (PDUKA/ZAR rate)         │
+│                                                          │
+│ PDukaTreasury               StakingPool                  │
+│ (multi-vault,               (APY yield)                  │
+│  $100K cap / vault)                                      │
+│                                                          │
+│ On-chain operations:                                     │
+│   batch burn  (0.5% of volume)                           │
+│   treasury skim  (2%)                                    │
+│   withdrawals / off-ramp                                 │
+│   staking deposits / rewards                             │
+│                                                          │
+│ All verifiable on Polygonscan.                           │
+└──────────────────────────────────────────────────────────┘
 
-This is the most common transaction type and the lowest-cost path.
+## 3. Account Model — Virtual Accounts
 
-Customer App API Database │ │ │ │ POST /transactions │ │ │ {merchantId, amount, │ │ │ qrPayload, authToken} │ │──────────────────────►│ │ │ │ │ │ │ 1. Validate QR payload│ │ │ 2. Verify customer auth│ │ │ 3. Check customer │ │ │ wallet balance │ │ │────────────────────────►│ │ │◄────────────────────────│ │ │ │ │ │ 4. Run fraud scoring │ │ │ (FraudModule) │ │ │ │ │ │ 5. BEGIN TRANSACTION │ │ │ 6. Lock customer wallet│ │ │ 7. Lock merchant wallet│ │ │ 8. Debit customer │ │ │ ledger entry │ │ │ 9. Credit merchant │ │ │ ledger entry │ │ │ (AVAILABLE - fee) │ │ │ 10. Credit merchant │ │ │ reserve entry │ │ │ (RESERVED, 5%) │ │ │ 11. Credit PayDuka fee │ │ │ revenue ledger │ │ │ 12. Create transaction │ │ │ record │ │ │ 13. Create txn events │ │ │ (CREATED, COMPLETED)│ │ │ 14. Create audit log │ │ │ 15. COMMIT TRANSACTION │ │ │────────────────────────►│ │ │◄────────────────────────│ │ │ │ │ Response: SUCCESS │ │ │ {txnId, amount, fee, │ │ │ newBalance} │ │ │◄──────────────────────│ │ │ │ │ │ │ 16. Emit txn.completed │ │ │ event (async) │ │ │ │ │ │ 17. Push notification │ │ │ to merchant PoS │ │ │ via WebSocket │ │ │ │ │ │ 18. Check if customer │ │ │ balance < threshold │ │ │ → Queue refill job │
+Every merchant and customer has a virtual account in PostgreSQL.
+The Wallet table stores three balances in ZAR cents:
 
+- **available** — spendable balance
+- **reserved** — merchant rolling reserve (5% of card transactions)
+- **staked** — earning APY, cannot be spent until unstaked
 
-**Critical implementation notes:**
+The actual PDuka tokens backing all virtual balances sit in a
+single PDukaPool smart contract on Polygon. The pool does not know
+about individual users. It only processes aggregate operations:
+batch settlement (burn + treasury skim), deposits, and withdrawals.
 
-- Steps 5-15 MUST execute in a single database transaction. If any step fails,
-  the entire transaction rolls back. The customer is never debited without the
-  merchant being credited.
-- Row-level locks (SELECT ... FOR UPDATE) on both wallets prevent concurrent
-  payments from creating race conditions.
-- The merchant receives (amount - fee - reserve) in AVAILABLE balance, and
-  (reserve amount) in RESERVED balance.
-- The fee is recorded as a credit to PayDuka's internal revenue wallet.
-- The fraud check (step 4) happens BEFORE the database transaction. If risk
-  is HIGH, the transaction is rejected before any balance changes occur.
+### Why virtual accounts, not per-user wallets?
 
-### 3.2 Auto-Refill Flow
+- **Speed**: DB debit/credit = <50ms. On-chain transfer = 2-5 seconds.
+- **Cost**: DB operation = free. On-chain tx = gas fee.
+- **UX**: No private keys, no seed phrases, no gas management.
+- **Recovery**: Lost phone ≠ lost funds. Re-login with phone + PIN.
+- **Offline tolerance**: Works even during chain congestion.
+- **Compliance**: Full transaction audit trail in SQL.
 
-Refill Trigger RefillModule PaymentRailModule Stitch (reactive or │ │ │ proactive) │ │ │ │ │ │ │ │ Queue refill job │ │ │ │──────────────────────────►│ │ │ │ │ │ │ │ 1. Acquire Redis lock │ │ │ (wallet:{id}:refill) │ │ │ TTL: 5 minutes │ │ │ │ │ │ │ 2. Check wallet balance │ │ │ < threshold │ │ │ │ │ │ │ 3. Check no in-flight │ │ │ refill exists │ │ │ │ │ │ │ 4. Create refill │ │ │ transaction record │ │ │ (status: INITIATED) │ │ │ │ │ │ │ 5. Initiate payment pull │ │ │ │───────────────────────►│ │ │ │ │ PayShap Request │ │ │ │─────────────────►│ │ │ │◄─────────────────│ │ │ │ {paymentId, url}│ │ │◄───────────────────────│ │ │ │ │ │ │ 6. Update refill txn │ │ │ (status: PENDING_PAYMENT) │ │ │ │ │ │ │ 7. Release Redis lock │ │ │ │ │ │ │ │ │ │ │ ... Stitch confirms payment via webhook ... │ │ │ │ │ │ 8. WebhookModule receives │ │ │ payment confirmation │ │ │ │ │ │ │ 9. Credit customer wallet │ │ │ (AVAILABLE, refill amount) │ │ │ │ │ │ │ 10. Update refill txn │ │ │ (status: COMPLETED) │ │ │ │ │ │ │ 11. Send notification: │ │ │ "Wallet refilled R1,000" │ │
+---
 
+## 4. Money Flow — Payment Transaction
 
-### 3.3 Card Payment with Same-Day Advance
+Customer taps "Pay" → scans merchant QR → confirms amount
 
-Merchant PoS API FraudModule AdvanceModule Stitch Card │ │ │ │ │ │ POST /txns │ │ │ │ │ {type: CARD, │ │ │ │ │ amount, token}│ │ │ │ │───────────────►│ │ │ │ │ │ │ │ │ │ │ 1. Card auth │ │ │ │ │───────────────────────────────────────────────────►│ │ │◄──────────────────────────────────────────────────│ │ │ {authorized, │ │ │ │ │ authCode} │ │ │ │ │ │ │ │ │ │ 2. Fraud check │ │ │ │ │───────────────────►│ │ │ │ │◄──────────────────│ │ │ │ │ {riskLevel: LOW} │ │ │ │ │ │ │ │ │ │ 3. Create txn │ │ │ │ │ (AUTHORIZED) │ │ │ │ │ │ │ │ │ "Authorized" │ │ │ │ │◄───────────────│ │ │ │ │ │ │ │ │ │ │ 4. Check merchant │ │ │ │ │ advance eligibility │ │ │ │─────────────────────────────────►│ │ │ │◄────────────────────────────────│ │ │ │ {eligible: true, │ │ │ │ │ advanceAmount, │ │ │ │ │ advanceFee} │ │ │ │ │ │ │ │ │ "Advance │ │ │ │ │ available: │ │ │ │ │ R960 for │ │ │ │ │ R14.40 fee" │ │ │ │ │◄───────────────│ │ │ │ │ │ │ │ │ │ POST /txns/ │ │ │ │ │ {id}/advance │ │ │ │ │───────────────►│ │ │ │ │ │ │ │ │ │ │ 5. BEGIN TRANSACTION │ │ │ │ 6. Credit merchant wallet │ │ │ │ (advanceAmount) │ │ │ │ 7. Create advance record │ │ │ │ (OUTSTANDING) │ │ │ │ 8. Debit advance pool │ │ │ │ 9. Record advance fee revenue │ │ │ │ 10. COMMIT │ │ │ │ │ │ │ │ "Advanced │ │ │ │ │ R960.00" │ │ │ │ │◄───────────────│ │ │ │ │ │ │ │ │ │ ... 1-3 days later, card settlement arrives ... │ │ │ │ │ │ │ │ 11. Settlement │ │ │ │ │ webhook │ │ │ │ │◄──────────────────────────────────────────────────│ │ │ │ │ │ │ │ 12. Match to │ │ │ │ │ outstanding advance │ │ │ │ 13. Credit advance pool │ │ │ │ (recovered) │ │ │ │ │ 14. Mark advance │ │ │ │ │ SETTLED │ │ │
+POST /transactions (customer app → API)
+API validates QR, checks balance, runs fraud scoring
+BEGIN DB TRANSACTION a. Lock customer wallet (SELECT FOR UPDATE) b. Lock merchant wallet (SELECT FOR UPDATE) c. Debit customer: available -= amount d. Credit merchant: available += (amount - fee) e. Credit merchant: reserved += (amount × 5%) f. Credit PayDuka: fee_revenue += fee g. Create transaction record, ledger entries, audit log
+COMMIT
+Return success to customer app
+Emit WebSocket event → merchant PoS confirms payment
+(Async) Check customer balance → queue auto-refill if low
+Total time: <500ms. Zero on-chain interaction.
 
 
 ---
 
-## 4. Scalability Design
+## 5. Money Flow — On-Chain Settlement (Hourly Batch)
 
-### 4.1 Phase 1-2 (Up to 2,000 merchants, 50,000 txns/month)
+SettlementBridgeService (cron, every hour):
 
-Single NestJS instance on ECS Fargate (2 vCPU, 4GB RAM). Single PostgreSQL
-RDS instance (db.r6g.large). Single Redis ElastiCache node. BullMQ workers
-running in the same ECS service. This architecture comfortably handles
-100+ transactions per minute.
+Query all COMPLETED transactions with no on-chain batch ID
+Sum total volume in ZAR cents
+Call PDukaPool.batchSettle(totalVolumeZarCents, batchId)
+Pool reads PDukaOracle for current PDUKA/ZAR rate
+Pool converts ZAR volume to token amount
+Pool burns 0.5% of token volume → sent to 0xdead
+Pool sends 2% to PDukaTreasury.receiveFunds()
+Treasury auto-routes to sub-vaults ($100K cap each)
+Pool emits BatchSettled event
+API marks transactions as on-chain settled, stores tx hash
 
-### 4.2 Phase 3-4 (Up to 8,000 merchants, 500,000 txns/month)
+## 6. Money Flow — Withdrawal / Off-Ramp
 
-Horizontally scale NestJS to 2-4 ECS tasks behind ALB. Add PostgreSQL read
-replica for analytics and admin dashboard queries. Separate BullMQ workers
-into their own ECS service for independent scaling. Add Redis cluster mode.
+### Merchant → Bank Account (ZAR)
+Merchant requests withdrawal in app
+API deducts platform fee from virtual balance
+API calls SettlementBridge.withdrawForMerchant()
+PDukaPool.withdraw() releases tokens to conversion address
+Tokens sold on DEX or via OTC for ZAR
+Stitch PayShap sends ZAR to merchant bank account
+Merchant sees Rands in their bank, typically same day
 
-### 4.3 Phase 5+ (20,000+ merchants, 2M+ txns/month)
+### Merchant/Customer → External Crypto Wallet
+User provides Polygon wallet address
+API deducts platform fee from virtual balance
+PDukaPool.withdraw() sends PDuka tokens to their address
+User holds actual tokens — can trade, stake externally, etc.
 
-Decompose into microservices: TransactionService, WalletService, and
-PaymentRailService become independent deployments communicating via message
-queue (SQS or NATS). Database sharding by merchant region if needed.
-Kubernetes (EKS) replaces ECS for orchestration complexity.
+### Customer → Cash-Out at Merchant
+Customer requests cash-out in app
+Walks to any PayDuka merchant
+Merchant confirms collection, hands over cash
+API deducts amount + fee from customer virtual balance
+API credits merchant virtual balance with commission
+
+## 7. Money Flow — In-App Staking
+
+Users see a simple toggle: "Earn 12% APY on your balance."
+
+### Behind the scenes:
+STAKE (instant, off-chain): wallet.available -= amount wallet.staked += amount Ledger entry: STAKE_LOCK
+DAILY REWARD DISTRIBUTION (cron): For each wallet where staked > 0: reward = staked × (APY / 365.25) wallet.available += reward Ledger entry: STAKING_REWARD
+UNSTAKE (instant, off-chain): wallet.staked -= amount wallet.available += amount Ledger entry: STAKE_UNLOCK
+ON-CHAIN SYNC (periodic batch): SettlementBridge aggregates total staked across all users Calls StakingPool.stake() with aggregate amount Claims aggregate rewards, distributes proportionally
+
+Users never interact with the StakingPool contract. They see
+their rewards appear in their available balance every day.
+
+## 8. Oracle & Pricing
+
+PDuka is a floating utility token, NOT a stablecoin. Users see
+ZAR in the app; the system converts at the current rate.
+
+### PDukaOracle Contract
+PDUKA/ZAR = PDUKA/USD × USD/ZAR
+
+Sources: PDUKA/USD → Pre-listing: admin-set (ICO price $0.005) Post-listing: QuickSwap TWAP (on-chain) USD/ZAR → exchangerate-api.com (updated every 10 min) Future: Chainlink USD/ZAR feed on Polygon
+
+Staleness threshold: 1 hour. Settlement fails if rate is stale. Rate snapshot stored with every batch for auditability.
+
+
+### Rate Update Flow
+SettlementBridgeService (cron, every 10 min):
+
+Fetch USD/ZAR from exchangerate-api.com
+Call PDukaOracle.setUsdZar(rate)
+Set PDukaOracle.setPdukaUsd(rate) from config or DEX TWAP
 
 ---
 
-## 5. Error Handling Strategy
+## 9. Treasury — Multi-Vault Architecture
 
-### 5.1 Error Classification
+The protocol treasury receives 2% of all transaction volume.
+For security, funds are split across multiple sub-wallets.
 
-| Category | HTTP Code | Retry | Alert | Example |
-|----------|-----------|-------|-------|---------|
-| Client Error | 400/422 | No | No | Invalid amount, missing field |
-| Auth Error | 401/403 | No | If >10/min | Invalid token, insufficient role |
-| Business Rule | 409 | No | No | Insufficient balance, merchant suspended |
-| Rate Limit | 429 | Yes (backoff) | If sustained | Too many requests |
-| Provider Error | 502 | Yes (3x) | Yes | Stitch API timeout |
-| System Error | 500 | No | Yes | Unhandled exception, DB connection |
+### PDukaTreasury Contract
+┌─────────────────────────────────┐ 
+│        PDukaTreasury            │ 
+│ (holds all tokens centrally)    │ 
+│                                 │ 
+│   Logical vault assignments:    │ 
+│      ┌───────┐ ┌───────┐        │ 
+│      │Vault 1│ │Vault 2│ ...    │ 
+│      │$100K  │ │$100K  │        │ 
+│      │ max   │ │ max   │        │ 
+│      └───────┘ └───────┘        │ 
+│                                 │ 
+│   receiveFunds() auto-routes    │ 
+│  to first vault with capacity   │ 
+│                                 │ 
+│   Rebalance when rate changes   │ 
+│  (cap is $100K, rate-adjusted)  │  
+└─────────────────────────────────┘
 
-### 5.2 Payment Rail Failure Handling
 
-All payment rail calls use a circuit breaker pattern:
-- **Closed** (normal): requests flow through to the provider.
-- **Open** (failure): after 5 consecutive failures or >50% failure rate in
-  60 seconds, the circuit opens. All requests fail immediately without
-  calling the provider. After 30 seconds, the circuit moves to half-open.
-- **Half-Open** (testing): one request is allowed through. If it succeeds,
-  the circuit closes. If it fails, the circuit re-opens.
+Vault addresses are logical labels. All tokens remain physically
+inside the treasury contract (no actual transfers to vault
+addresses). This means:
+- No multi-sig approvals needed for rebalance
+- No gas costs for rebalance
+- Single contract to audit on Polygonscan
+- Easy recovery if a vault label is compromised (just re-assign)
 
-When the primary rail (PayShap) circuit is open, the system falls back to
-alternative rails (Capitec Pay, EFT) where possible.
+Admin can add/remove vaults, adjust the $100K cap, and trigger
+rebalance when the PDUKA price changes significantly.
+
+---
+
+## 10. Smart Contracts Summary
+
+| Contract       | Purpose                                | Key Functions                        |
+|----------------|----------------------------------------|--------------------------------------|
+| PDukaToken     | ERC-20 token, 21B fixed supply         | transfer, burn                       |
+| PDukaPool      | Pooled custody for all virtual accounts| deposit, batchSettle, withdraw       |
+| PDukaOracle    | PDUKA/ZAR price feed                   | pdukaZar, zarToPduka, pdukaToZar     |
+| PDukaTreasury  | Multi-vault treasury management        | receiveFunds, disburse, rebalance    |
+| StakingPool    | Yield generation for stakers           | stake, unstake, claimRewards         |
+
+All contracts deployed on Polygon Mainnet. Addresses stored in
+environment config and queryable from the admin dashboard.
+
+---
+
+## 11. Backend Modules
+
+| Module            | Responsibility                                      |
+|-------------------|-----------------------------------------------------|
+| AuthModule        | JWT, API keys, role guards, biometric token mgmt    |
+| MerchantModule    | Onboarding, KYC, profiles                           |
+| CustomerModule    | Registration, KYC tiers, profiles                   |
+| WalletModule      | Balances (available/reserved/staked), ledger        |
+| TransactionModule | POST /transactions, QR validation, debit/credit     |
+| CashInModule      | Merchant cash deposits, fee tiers, KYC limits       |
+| RemittanceModule  | Send/collect via tracking code, escrow              |
+| FraudModule       | Risk scoring, velocity checks, AML flags            |
+| PaymentRailModule | Stitch API (PayShap, Capitec Pay, cards)            |
+| AdvanceModule     | Card advance engine, eligibility, rolling reserve   |
+| RefillModule      | Auto-refill via BullMQ, Redis locks, Stitch pulls   |
+| StakingModule     | In-app staking, daily reward distribution           |
+| SettlementModule  | Daily batch settlement, reserve release             |
+| SettlementBridge  | On-chain batch settlement, oracle updates, off-ramp |
+| WebhookModule     | Inbound callbacks from Stitch, signature verify     |
+| NotificationModule| WebSocket gateway, push notifications               |
+| AdminModule       | Dashboard stats, KYC review, fraud queue            |
+
+---
+
+## 12. Fee Structure
+
+| Event                    | Customer Fee      | Merchant Fee     | Protocol Revenue         |
+|--------------------------|-------------------|------------------|--------------------------|
+| QR Payment               | —                 | 1.5% of amount   | 1.5% (fee)               |
+| Cash-In Deposit          | R2–R25 flat       | —                | R0.50–R8 (from cust fee) |
+| Cash-Out at Merchant     | R5–R25 flat       | — (earns comm.)  | R2–R10 (from cust fee)   |
+| Remittance Send          | R5–R20 flat       | — (earns comm.)  | R2–R8 (from sender fee)  |
+| Remittance Collect       | —                 | — (earns comm.)  | —                        |
+| Card Advance             | —                 | 1.5% of advance  | 1.5% (advance fee)       |
+| Withdrawal to Bank       | R10 flat          | R15 flat         | Withdrawal fee           |
+| Withdrawal to Wallet     | R5 flat           | R10 flat         | Withdrawal fee           |
+| On-Chain Burn            | —                 | —                | 0.5% of settled volume   |
+| On-Chain Treasury Skim   | —                 | —                | 2.0% of settled volume   |
+
+Fees apply on all movements. Users who hold and stake avoid fees
+and earn 8–15% APY — incentivizing retention over withdrawal.
+
+---
+
+## 13. Monorepo Structure
+
+payduka/
+├── apps/
+│   ├── api/                   # NestJS backend (17 modules)
+│   ├── merchant-app/          # React Native (Expo), merchant PoS
+│   ├── customer-app/          # React Native (Expo), customer wallet
+│   └── admin-dashboard/       # Next.js, operations console
+├── packages/
+│   └── shared/                # Enums, interfaces, constants, fee tiers
+├── contracts/                 # Solidity (Hardhat), 5 contracts
+│   └── src/
+│       ├── PDukaToken.sol
+│       ├── PDukaPool.sol
+│       ├── PDukaOracle.sol
+│       ├── PDukaTreasury.sol
+│       └── StakingPool.sol
+├── docs/
+│   ├── ARCHITECTURE.md        # This document
+│   └── diagrams/
+├── infra/
+│   ├── docker-compose.yml     # Redis (Postgres via Supabase or local)
+│   └── terraform/
+├── package.json               # pnpm workspaces + turborepo
+├── turbo.json
+└── pnpm-workspace.yaml
+
+## 14. Roadmap Integration
+
+| Phase      | Off-Chain                              | On-Chain                           |
+|------------|----------------------------------------|------------------------------------|
+| Q1 2026    | API + merchant app pilot               | Deploy token + pool (testnet)      |
+| Q2 2026    | 50 merchants, cash-in live             | Mainnet deploy, seed sale via ICO  |
+| Q3 2026    | Customer app, remittance, 500 agents   | Oracle live, batch settlement      |
+| Q4 2026    | 2,000+ merchants, card advances        | DEX listing, treasury multi-vault  |
+| 2027+      | West Africa, SE Asia, 20K+ merchants   | Cross-chain bridges, DAO governance|

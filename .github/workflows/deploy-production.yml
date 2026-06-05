@@ -1,0 +1,62 @@
+name: Deploy Production
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "9"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build all
+        run: pnpm build:all
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.PROD_API_URL }}
+
+      # ── Migrations ──
+      - name: Run database migrations
+        run: cd apps/api && pnpm migration:run
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          NODE_ENV: production
+
+      # ── Deploy API ──
+      - name: Build & push production Docker image
+        run: |
+          docker build -t payduka-api:${{ github.ref_name }} -f apps/api/Dockerfile .
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ${{ vars.REGISTRY_URL }} -u ${{ vars.REGISTRY_USER }} --password-stdin
+          docker tag payduka-api:${{ github.ref_name }} ${{ vars.REGISTRY_URL }}/payduka-api:${{ github.ref_name }}
+          docker tag payduka-api:${{ github.ref_name }} ${{ vars.REGISTRY_URL }}/payduka-api:latest
+          docker push ${{ vars.REGISTRY_URL }}/payduka-api:${{ github.ref_name }}
+          docker push ${{ vars.REGISTRY_URL }}/payduka-api:latest
+
+      # ── Deploy Admin ──
+      - name: Deploy admin to Vercel (production)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+          vercel-args: "--prod"
+          working-directory: apps/admin-dashboard

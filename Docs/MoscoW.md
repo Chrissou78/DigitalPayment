@@ -201,10 +201,10 @@ A ticket is DONE when:
 
 ## Risk Register
 
-| Risk | Impact | Likelihood | Mitigation |
+| Risk                                               | Impact | Likelihood | Mitigation |
 |------|--------|-----------|------------|
-| Stitch API integration takes longer than estimated | HIGH | MEDIUM | Start Sprint 3 with Stitch sandbox early. Allocate 2 devs to integration. Abstract behind interface so mock can be used until live. |
-| DebiCheck mandate setup complexity | MEDIUM | HIGH | Begin Stitch DebiCheck research in Sprint 2. Fallback: manual PayShap top-up only for pilot (no auto-refill via DebiCheck). |
-| Card acquiring partnership delay | HIGH | MEDIUM | Card payments are Sprint 4. If partnership isn't ready, pilot launches with wallet + bank payments only. Card + advance added post-pilot. |
-| React Native development slower than estimated | MEDIUM | MEDIUM | Prioritize merchant app over customer app. Pilot can launch with merchant Android app + customer web fallback if needed. |
-| Fraud engine false positives | LOW | HIGH | Launch with conservative thresholds (fewer triggers). Tune based on pilot data. All MEDIUM-risk auto-approve after 24h if not reviewed. |
+| Stitch API integration takes longer than estimated | HIGH   | MEDIUM     | Start Sprint 3 with Stitch sandbox early. Allocate 2 devs to integration. Abstract behind interface so mock can be used until live. |
+| DebiCheck mandate setup complexity                 | MEDIUM | HIGH       | Begin Stitch DebiCheck research in Sprint 2. Fallback: manual PayShap top-up only for pilot (no auto-refill via DebiCheck). |
+| Card acquiring partnership delay                   | HIGH   | MEDIUM     | Card payments are Sprint 4. If partnership isn't ready, pilot launches with wallet + bank payments only. Card + advance added post-pilot. |
+| React Native development slower than estimated     | MEDIUM | MEDIUM     | Prioritize merchant app over customer app. Pilot can launch with merchant Android app + customer web fallback if needed. |
+| Fraud engine false positives                       | LOW    | HIGH       | Launch with conservative thresholds (fewer triggers). Tune based on pilot data. All MEDIUM-risk auto-approve after 24h if not reviewed. |

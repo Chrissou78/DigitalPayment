@@ -1,0 +1,255 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
+
+jobs:
+  # ─────────────────────────────────────────
+  #  Lint & Type Check
+  # ─────────────────────────────────────────
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint all packages
+        run: pnpm lint:all
+
+      - name: Type check API
+        run: cd apps/api && pnpm exec tsc --noEmit
+
+      - name: Type check shared
+        run: cd packages/shared && pnpm exec tsc --noEmit
+
+      - name: Type check admin dashboard
+        run: cd apps/admin-dashboard && pnpm exec tsc --noEmit
+
+  # ─────────────────────────────────────────
+  #  API Unit Tests
+  # ─────────────────────────────────────────
+  test-api:
+    name: API Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: payduka
+          POSTGRES_PASSWORD: payduka_secret
+          POSTGRES_DB: payduka_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U payduka"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USERNAME: payduka
+      DB_PASSWORD: payduka_secret
+      DB_DATABASE: payduka_test
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      JWT_SECRET: test-secret-do-not-use-in-production
+      STITCH_CLIENT_ID: test
+      STITCH_CLIENT_SECRET: test
+      POLYGON_RPC_URL: https://polygon-rpc.com
+      SETTLEMENT_PRIVATE_KEY: "0x0000000000000000000000000000000000000000000000000000000000000001"
+      PDUKA_TOKEN_ADDRESS: "0x0000000000000000000000000000000000000001"
+      PDUKA_POOL_ADDRESS: "0x0000000000000000000000000000000000000002"
+      PDUKA_ORACLE_ADDRESS: "0x0000000000000000000000000000000000000003"
+      PDUKA_TREASURY_ADDRESS: "0x0000000000000000000000000000000000000004"
+      STAKING_POOL_ADDRESS: "0x0000000000000000000000000000000000000005"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        run: cd apps/api && pnpm test -- --coverage --forceExit
+
+      - name: Run e2e tests
+        run: cd apps/api && pnpm test:e2e -- --forceExit
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage
+          path: apps/api/coverage/
+
+  # ─────────────────────────────────────────
+  #  Smart Contract Tests
+  # ─────────────────────────────────────────
+  test-contracts:
+    name: Contract Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Compile contracts
+        run: cd contracts && npx hardhat compile
+
+      - name: Run contract tests
+        run: cd contracts && npx hardhat test
+
+      - name: Gas report
+        run: cd contracts && REPORT_GAS=true npx hardhat test
+
+  # ─────────────────────────────────────────
+  #  Build All
+  # ─────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [test-api, test-contracts]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: cd packages/shared && pnpm build
+
+      - name: Build API
+        run: cd apps/api && pnpm build
+
+      - name: Build admin dashboard
+        run: cd apps/admin-dashboard && pnpm build
+
+      - name: Upload API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-dist
+          path: apps/api/dist/
+
+      - name: Upload admin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-dist
+          path: apps/admin-dashboard/.next/
+
+  # ─────────────────────────────────────────
+  #  Database Migrations (dry run)
+  # ─────────────────────────────────────────
+  migrations:
+    name: Migration Check
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: payduka
+          POSTGRES_PASSWORD: payduka_secret
+          POSTGRES_DB: payduka_migration_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U payduka"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USERNAME: payduka
+      DB_PASSWORD: payduka_secret
+      DB_DATABASE: payduka_migration_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run migrations (up)
+        run: cd apps/api && npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/data-source.ts
+
+      - name: Verify migrations (show)
+        run: cd apps/api && npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:show -d src/data-source.ts
+
+      - name: Revert migrations (down)
+        run: cd apps/api && npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d src/data-source.ts

@@ -1,0 +1,54 @@
+name: Deploy Contracts
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: "Target network"
+        required: true
+        type: choice
+        options:
+          - amoy
+          - polygon
+      confirm:
+        description: "Type DEPLOY to confirm"
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.network }}
+    runs-on: ubuntu-latest
+    if: inputs.confirm == 'DEPLOY'
+    environment: ${{ inputs.network == 'polygon' && 'production' || 'staging' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "9"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Compile contracts
+        run: cd contracts && npx hardhat compile
+
+      - name: Run tests before deploy
+        run: cd contracts && npx hardhat test
+
+      - name: Deploy
+        run: cd contracts && npx hardhat run scripts/deploy.ts --network ${{ inputs.network }}
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
+          POLYGONSCAN_API_KEY: ${{ secrets.POLYGONSCAN_API_KEY }}
+
+      - name: Verify on Polygonscan
+        if: inputs.network == 'polygon'
+        run: cd contracts && npx hardhat verify --network polygon
+        continue-on-error: true
