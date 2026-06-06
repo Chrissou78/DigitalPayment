@@ -1,12 +1,12 @@
-import { Request } from 'express';
-import { Role } from '../enums/role.enum';
+// apps/api/src/common/interfaces/request-with-user.interface.ts
+import { Request } from "express";
 
-export interface JwtPayload {
-  sub: string;
-  merchantId?: string;
-  role: Role;
+export interface AuthUser {
+  id: string;
+  merchantId: string;
+  role: string;
 }
 
 export interface RequestWithUser extends Request {
-  user: JwtPayload;
+  user: AuthUser;
 }

@@ -10,33 +10,33 @@ import {
 @Entity("wallets")
 export class Wallet {
   @PrimaryGeneratedColumn("uuid")
-  id: string;
+  id!: string;
 
   @Column({ type: "uuid" })
   @Index()
-  ownerId: string; // merchantId or customerId
+  ownerId!: string;
 
   @Column({ type: "varchar", length: 20 })
-  ownerType: "MERCHANT" | "CUSTOMER";
+  ownerType!: "MERCHANT" | "CUSTOMER";
 
   @Column({ type: "int", default: 0 })
-  available: number; // ZAR cents
+  available!: number;
 
   @Column({ type: "int", default: 0 })
-  reserved: number; // ZAR cents (rolling reserve for merchants)
+  reserved!: number;
 
   @Column({ type: "int", default: 0 })
-  staked: number; // ZAR cents (earning APY)
+  staked!: number;
 
   @Column({ type: "varchar", length: 3, default: "ZAR" })
-  currency: string;
+  currency!: string;
 
   @Column({ type: "varchar", length: 20, default: "ACTIVE" })
-  status: string;
+  status!: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

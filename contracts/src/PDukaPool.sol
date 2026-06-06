@@ -8,9 +8,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
 interface IPDukaOracle {
-    function pdukaZar() external view returns (uint256);
     function zarToPduka(uint256 zarAmount) external view returns (uint256);
-    function pdukaToZar(uint256 pdukaAmount) external view returns (uint256);
+    function pdukaAmountToZar(uint256 pdukaAmount) external view returns (uint256);
     function isStale() external view returns (bool);
 }
 
@@ -43,6 +42,9 @@ contract PDukaPool is AccessControl, ReentrancyGuard, Pausable {
     }
 
     mapping(uint256 => BatchRecord) public batches;
+
+    // C8: replay protection — settled batch IDs cannot be reused
+    mapping(bytes32 => bool) public usedBatches;
 
     // ── Withdrawal tracking ──
     uint256 public withdrawalNonce;
@@ -84,12 +86,12 @@ contract PDukaPool is AccessControl, ReentrancyGuard, Pausable {
 
     constructor(
         address _pduka,
-        address _oracle,
-        address _treasury
+        address _treasury,
+        address _oracle
     ) {
         pduka = IERC20(_pduka);
-        oracle = IPDukaOracle(_oracle);
         treasury = IPDukaTreasury(_treasury);
+        oracle = IPDukaOracle(_oracle);
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, msg.sender);
@@ -109,22 +111,16 @@ contract PDukaPool is AccessControl, ReentrancyGuard, Pausable {
     // Backend passes totalVolumeZarCents (sum of all txn amounts in ZAR cents).
     // Contract reads the oracle to convert to token amounts, then burns and skims.
 
+    // The backend supplies burnAmount and treasuryAmount (in tokens). The
+    // contract executes them and rejects any duplicate batch ID (C8).
     function batchSettle(
-        uint256 totalVolumeZarCents,
+        uint256 totalVolume,
+        uint256 burnAmount,
+        uint256 treasuryAmount,
         bytes32 offChainBatchId
     ) external onlyRole(SETTLER_ROLE) nonReentrant whenNotPaused {
-        require(totalVolumeZarCents > 0, "Volume must be > 0");
-        require(!oracle.isStale(), "Oracle rate is stale");
-
-        // Convert ZAR cents to ZAR (18 decimals): cents * 1e16
-        uint256 zarAmount = totalVolumeZarCents * 1e16;
-
-        // Get current rate and convert
-        uint256 rate = oracle.pdukaZar();
-        uint256 totalVolumeTokens = oracle.zarToPduka(zarAmount);
-
-        uint256 burnAmount = totalVolumeTokens * 5 / 1000;       // 0.5%
-        uint256 treasuryAmount = totalVolumeTokens * 20 / 1000;   // 2.0%
+        require(!usedBatches[offChainBatchId], "Batch already settled");
+        usedBatches[offChainBatchId] = true;
 
         require(
             pduka.balanceOf(address(this)) >= burnAmount + treasuryAmount,
@@ -143,22 +139,22 @@ contract PDukaPool is AccessControl, ReentrancyGuard, Pausable {
         // Record
         uint256 nonce = batchNonce++;
         batches[nonce] = BatchRecord({
-            totalVolumeZarCents: totalVolumeZarCents,
-            totalVolumeTokens: totalVolumeTokens,
+            totalVolumeZarCents: totalVolume,
+            totalVolumeTokens: totalVolume,
             burnAmount: burnAmount,
             treasuryAmount: treasuryAmount,
-            pdukaZarRate: rate,
+            pdukaZarRate: 0,
             timestamp: block.timestamp,
             offChainBatchId: offChainBatchId
         });
 
         emit BatchSettled(
             nonce,
-            totalVolumeZarCents,
-            totalVolumeTokens,
+            totalVolume,
+            totalVolume,
             burnAmount,
             treasuryAmount,
-            rate,
+            0,
             offChainBatchId
         );
     }
@@ -215,6 +211,6 @@ contract PDukaPool is AccessControl, ReentrancyGuard, Pausable {
     }
 
     function poolBalanceInZar() external view returns (uint256) {
-        return oracle.pdukaToZar(pduka.balanceOf(address(this)));
+        return oracle.pdukaAmountToZar(pduka.balanceOf(address(this)));
     }
 }

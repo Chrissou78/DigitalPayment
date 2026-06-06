@@ -17,12 +17,12 @@ export class WalletService {
   ) {}
 
   async createForMerchant(merchantId: string): Promise<Wallet> {
-    const wallet = this.walletRepo.create({ merchantId });
+    const wallet = this.walletRepo.create({ ownerId: merchantId, ownerType: 'MERCHANT' });
     return this.walletRepo.save(wallet);
   }
 
   async findByMerchantId(merchantId: string): Promise<Wallet> {
-    return this.walletRepo.findOneOrFail({ where: { merchantId } });
+    return this.walletRepo.findOneOrFail({ where: { ownerId: merchantId, ownerType: 'MERCHANT' } });
   }
 
   /**
@@ -47,18 +47,18 @@ export class WalletService {
       throw new BadRequestException('Wallet not available');
     }
 
-    if (wallet.availableBalance < amount) {
+    if (wallet.available < amount) {
       throw new BadRequestException('Insufficient balance');
     }
 
-    wallet.availableBalance = Number(wallet.availableBalance) - amount;
+    wallet.available = Number(wallet.available) - amount;
     await qr.manager.save(wallet);
 
     const entry = qr.manager.create(LedgerEntry, {
       walletId,
       type,
       amount: -amount,
-      balanceAfter: wallet.availableBalance,
+      balanceAfter: wallet.available,
       transactionId,
       description,
     });
@@ -83,9 +83,9 @@ export class WalletService {
     }
 
     if (type === LedgerEntryType.RESERVED) {
-      wallet.reservedBalance = Number(wallet.reservedBalance) + amount;
+      wallet.reserved = Number(wallet.reserved) + amount;
     } else {
-      wallet.availableBalance = Number(wallet.availableBalance) + amount;
+      wallet.available = Number(wallet.available) + amount;
     }
 
     await qr.manager.save(wallet);
@@ -96,16 +96,26 @@ export class WalletService {
       amount: +amount,
       balanceAfter:
         type === LedgerEntryType.RESERVED
-          ? wallet.reservedBalance
-          : wallet.availableBalance,
+          ? wallet.reserved
+          : wallet.available,
       transactionId,
       description,
     });
     return qr.manager.save(entry);
   }
 
-  async getBalance(walletId: string): Promise<{ available: number; reserved: number }> {
-    const w = await this.walletRepo.findOneOrFail({ where: { id: walletId } });
-    return { available: Number(w.availableBalance), reserved: Number(w.reservedBalance) };
+  async getBalance(
+    walletId: string,
+  ): Promise<{ available: number; reserved: number; staked: number; currency: string }> {
+    const w = await this.walletRepo.findOne({ where: { id: walletId } });
+    if (!w) {
+      throw new BadRequestException('Wallet not found');
+    }
+    return {
+      available: Number(w.available),
+      reserved: Number(w.reserved),
+      staked: Number(w.staked),
+      currency: w.currency,
+    };
   }
 }

@@ -6,7 +6,7 @@ import type { TypedContractEvent, TypedDeferredTopicFilter, TypedEventLog, Typed
   
 
   export interface PDukaOracleInterface extends Interface {
-    getFunction(nameOrSignature: "DEFAULT_ADMIN_ROLE" | "ORACLE_ROLE" | "getRoleAdmin" | "grantRole" | "hasRole" | "isStale" | "lastUpdated" | "pdukaToZar" | "pdukaUsd" | "pdukaZar" | "renounceRole" | "revokeRole" | "setPdukaUsd" | "setStalenessThreshold" | "setUsdZar" | "stalenessThreshold" | "supportsInterface" | "usdZar" | "useChainlinkForFx" | "zarToPduka"): FunctionFragment;
+    getFunction(nameOrSignature: "DEFAULT_ADMIN_ROLE" | "ORACLE_ROLE" | "getRoleAdmin" | "grantRole" | "hasRole" | "isStale" | "lastUpdated" | "pdukaAmountToZar" | "pdukaToZar" | "pdukaUsd" | "renounceRole" | "revokeRole" | "setPdukaUsd" | "setStalenessThreshold" | "setUsdZar" | "stalenessThreshold" | "supportsInterface" | "updateRates" | "usdZar" | "useChainlinkForFx" | "zarToPduka"): FunctionFragment;
 
     getEvent(nameOrSignatureOrTopic: "PdukaUsdUpdated" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked" | "StalenessThresholdUpdated" | "UsdZarUpdated"): EventFragment;
 
@@ -17,9 +17,9 @@ encodeFunctionData(functionFragment: 'grantRole', values: [BytesLike, AddressLik
 encodeFunctionData(functionFragment: 'hasRole', values: [BytesLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'isStale', values?: undefined): string;
 encodeFunctionData(functionFragment: 'lastUpdated', values?: undefined): string;
-encodeFunctionData(functionFragment: 'pdukaToZar', values: [BigNumberish]): string;
+encodeFunctionData(functionFragment: 'pdukaAmountToZar', values: [BigNumberish]): string;
+encodeFunctionData(functionFragment: 'pdukaToZar', values?: undefined): string;
 encodeFunctionData(functionFragment: 'pdukaUsd', values?: undefined): string;
-encodeFunctionData(functionFragment: 'pdukaZar', values?: undefined): string;
 encodeFunctionData(functionFragment: 'renounceRole', values: [BytesLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'revokeRole', values: [BytesLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'setPdukaUsd', values: [BigNumberish]): string;
@@ -27,6 +27,7 @@ encodeFunctionData(functionFragment: 'setStalenessThreshold', values: [BigNumber
 encodeFunctionData(functionFragment: 'setUsdZar', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'stalenessThreshold', values?: undefined): string;
 encodeFunctionData(functionFragment: 'supportsInterface', values: [BytesLike]): string;
+encodeFunctionData(functionFragment: 'updateRates', values: [BigNumberish, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'usdZar', values?: undefined): string;
 encodeFunctionData(functionFragment: 'useChainlinkForFx', values?: undefined): string;
 encodeFunctionData(functionFragment: 'zarToPduka', values: [BigNumberish]): string;
@@ -38,9 +39,9 @@ decodeFunctionResult(functionFragment: 'grantRole', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'hasRole', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'isStale', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'lastUpdated', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'pdukaAmountToZar', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'pdukaToZar', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'pdukaUsd', data: BytesLike): Result;
-decodeFunctionResult(functionFragment: 'pdukaZar', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'renounceRole', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'revokeRole', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'setPdukaUsd', data: BytesLike): Result;
@@ -48,6 +49,7 @@ decodeFunctionResult(functionFragment: 'setStalenessThreshold', data: BytesLike)
 decodeFunctionResult(functionFragment: 'setUsdZar', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'stalenessThreshold', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'supportsInterface', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'updateRates', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'usdZar', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'useChainlinkForFx', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'zarToPduka', data: BytesLike): Result;
@@ -216,7 +218,7 @@ decodeFunctionResult(functionFragment: 'zarToPduka', data: BytesLike): Result;
     
 
     
-    pdukaToZar: TypedContractMethod<
+    pdukaAmountToZar: TypedContractMethod<
       [pdukaAmount: BigNumberish, ],
       [bigint],
       'view'
@@ -224,7 +226,7 @@ decodeFunctionResult(functionFragment: 'zarToPduka', data: BytesLike): Result;
     
 
     
-    pdukaUsd: TypedContractMethod<
+    pdukaToZar: TypedContractMethod<
       [],
       [bigint],
       'view'
@@ -232,7 +234,7 @@ decodeFunctionResult(functionFragment: 'zarToPduka', data: BytesLike): Result;
     
 
     
-    pdukaZar: TypedContractMethod<
+    pdukaUsd: TypedContractMethod<
       [],
       [bigint],
       'view'
@@ -292,6 +294,14 @@ decodeFunctionResult(functionFragment: 'zarToPduka', data: BytesLike): Result;
       [interfaceId: BytesLike, ],
       [boolean],
       'view'
+    >
+    
+
+    
+    updateRates: TypedContractMethod<
+      [_pdukaUsd: BigNumberish, _usdZar: BigNumberish, ],
+      [void],
+      'nonpayable'
     >
     
 
@@ -357,17 +367,17 @@ getFunction(nameOrSignature: 'lastUpdated'): TypedContractMethod<
       [bigint],
       'view'
     >;
-getFunction(nameOrSignature: 'pdukaToZar'): TypedContractMethod<
+getFunction(nameOrSignature: 'pdukaAmountToZar'): TypedContractMethod<
       [pdukaAmount: BigNumberish, ],
       [bigint],
       'view'
     >;
-getFunction(nameOrSignature: 'pdukaUsd'): TypedContractMethod<
+getFunction(nameOrSignature: 'pdukaToZar'): TypedContractMethod<
       [],
       [bigint],
       'view'
     >;
-getFunction(nameOrSignature: 'pdukaZar'): TypedContractMethod<
+getFunction(nameOrSignature: 'pdukaUsd'): TypedContractMethod<
       [],
       [bigint],
       'view'
@@ -406,6 +416,11 @@ getFunction(nameOrSignature: 'supportsInterface'): TypedContractMethod<
       [interfaceId: BytesLike, ],
       [boolean],
       'view'
+    >;
+getFunction(nameOrSignature: 'updateRates'): TypedContractMethod<
+      [_pdukaUsd: BigNumberish, _usdZar: BigNumberish, ],
+      [void],
+      'nonpayable'
     >;
 getFunction(nameOrSignature: 'usdZar'): TypedContractMethod<
       [],

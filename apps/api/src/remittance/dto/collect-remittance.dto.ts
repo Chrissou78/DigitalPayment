@@ -2,8 +2,8 @@ import { IsString } from 'class-validator';
 
 export class CollectRemittanceDto {
   @IsString()
-  collectionCode: string;
+  collectionCode!: string;
 
   @IsString()
-  recipientPhone: string;
+  recipientPhone!: string;
 }

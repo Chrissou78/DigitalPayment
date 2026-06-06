@@ -4,14 +4,14 @@ export interface FraudResult {
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
   score: number; // 0-100
   flags: string[];
-  approved: boolean;
+  pass: boolean;
 }
 
 @Injectable()
 export class FraudService {
   private readonly logger = new Logger(FraudService.name);
 
-  async evaluate(params: {
+  async score(params: {
     merchantId: string;
     customerId?: string;
     amount: number;
@@ -35,19 +35,26 @@ export class FraudService {
       flags.push('VERY_HIGH_VALUE');
     }
 
+    // Rule 3: Extreme value — blocked
+    if (params.amount > 10000000) {
+      // R100,000+
+      score += 30;
+      flags.push('EXTREME_VALUE');
+    }
+
     // TODO: Add velocity checks (Redis-backed sliding window)
     // TODO: Add device fingerprint checks
     // TODO: Add geolocation anomaly detection
     // TODO: Add merchant history scoring
 
     const riskLevel = score >= 60 ? 'HIGH' : score >= 30 ? 'MEDIUM' : 'LOW';
-    const approved = riskLevel !== 'HIGH';
+    const pass = riskLevel !== 'HIGH';
 
     this.logger.log(
       `Fraud check: merchant=${params.merchantId} amount=${params.amount} ` +
-      `score=${score} risk=${riskLevel} approved=${approved}`,
+      `score=${score} risk=${riskLevel} pass=${pass}`,
     );
 
-    return { riskLevel, score, flags, approved };
+    return { riskLevel, score, flags, pass };
   }
 }

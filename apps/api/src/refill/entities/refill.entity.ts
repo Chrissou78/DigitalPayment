@@ -1,35 +1,39 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn,
-} from 'typeorm';
-import { RefillStatus } from '../../common/enums/refill-status.enum';
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
+import { RefillStatus } from "../../common/enums/refill-status.enum";
+import { bigintTransformer } from "../../common/transformers/bigint.transformer";
 
-@Entity('refills')
+@Entity("refills")
 export class Refill {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn("uuid")
+  id!: string;
 
-  @Column('uuid')
-  walletId: string;
+  @Column("uuid")
+  walletId!: string;
 
-  @Column({ type: 'bigint' })
-  amount: number; // cents
+  @Column({ type: "bigint", transformer: bigintTransformer })
+  amount!: number;
 
-  @Column({ type: 'enum', enum: RefillStatus, default: RefillStatus.INITIATED })
-  status: RefillStatus;
-
-  @Column({ nullable: true })
-  externalPaymentId: string; // Stitch payment ID
+  @Column({ type: "enum", enum: RefillStatus, default: RefillStatus.INITIATED })
+  status!: RefillStatus;
 
   @Column({ nullable: true })
-  externalPaymentUrl: string;
+  externalPaymentId!: string;
 
-  @Column({ type: 'timestamp', nullable: true })
-  completedAt: Date;
+  @Column({ nullable: true })
+  externalPaymentUrl!: string;
+
+  @Column({ type: "timestamp", nullable: true })
+  completedAt!: Date;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

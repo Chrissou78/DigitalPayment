@@ -3,9 +3,10 @@
 /* eslint-disable */
 import type * as pDukaPoolSol from './PDukaPool.sol/index.js';
 export type { pDukaPoolSol };
+import type * as pDukaTreasurySol from './PDukaTreasury.sol/index.js';
+export type { pDukaTreasurySol };
 export type { PDukaOracle } from './PDukaOracle.js';
 export type { PDukaToken } from './PDukaToken.js';
-export type { PDukaTreasury } from './PDukaTreasury.js';
 export type { SettlementRegistry } from './SettlementRegistry.js';
 export type { StakingPool } from './StakingPool.js';
 export * as factories from './factories/index.js';
@@ -16,7 +17,10 @@ export type { IPDukaTreasury } from './PDukaPool.sol/IPDukaTreasury.js';
 export { IPDukaTreasury__factory } from './factories/PDukaPool.sol/IPDukaTreasury__factory.js';
 export type { PDukaPool } from './PDukaPool.sol/PDukaPool.js';
 export { PDukaPool__factory } from './factories/PDukaPool.sol/PDukaPool__factory.js';
-export { PDukaToken__factory } from './factories/PDukaToken__factory.js';
-export { PDukaTreasury__factory } from './factories/PDukaTreasury__factory.js';
+export type { ITreasuryOracle } from './PDukaTreasury.sol/ITreasuryOracle.js';
+export { ITreasuryOracle__factory } from './factories/PDukaTreasury.sol/ITreasuryOracle__factory.js';
+export type { PDukaTreasury } from './PDukaTreasury.sol/PDukaTreasury.js';
+export { PDukaTreasury__factory } from './factories/PDukaTreasury.sol/PDukaTreasury__factory.js';
 export { SettlementRegistry__factory } from './factories/SettlementRegistry__factory.js';
+export { PDukaToken__factory } from './factories/PDukaToken__factory.js';
 export { StakingPool__factory } from './factories/StakingPool__factory.js';

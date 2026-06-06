@@ -27,20 +27,7 @@
         "type": "uint256"
       }
     ],
-    "name": "pdukaToZar",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "pdukaZar",
+    "name": "pdukaAmountToZar",
     "outputs": [
       {
         "internalType": "uint256",

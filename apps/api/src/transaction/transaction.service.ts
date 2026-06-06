@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -11,6 +11,7 @@ import { TransactionStatus } from '../common/enums/transaction-status.enum';
 import { TransactionType } from '../common/enums/transaction-type.enum';
 import { LedgerEntryType } from '../common/enums/ledger-entry-type.enum';
 
+import { Wallet } from '../wallet/entities/wallet.entity';
 import { WalletService } from '../wallet/wallet.service';
 import { FraudService } from '../fraud/fraud.service';
 import { PaymentRailService } from '../payment-rail/payment-rail.service';
@@ -23,23 +24,69 @@ export class TransactionService {
   constructor(
     @InjectRepository(Transaction)
     private readonly txnRepo: Repository<Transaction>,
+    @Optional()
     @InjectRepository(TransactionEvent)
     private readonly eventRepo: Repository<TransactionEvent>,
     private readonly dataSource: DataSource,
-    private readonly walletService: WalletService,
+    @Optional() private readonly walletService: WalletService,
     private readonly fraudService: FraudService,
     private readonly paymentRail: PaymentRailService,
-    private readonly merchantService: MerchantService,
+    @Optional() private readonly merchantService: MerchantService,
     private readonly emitter: EventEmitter2,
     private readonly config: ConfigService,
   ) {}
+
+  /**
+   * QR / wallet-to-wallet payment: debit the customer, credit the merchant net
+   * of fee, atomically.
+   */
+  async createPayment(params: {
+    merchantId: string;
+    customerId: string;
+    amount: number;
+    qrPayload?: string;
+  }) {
+    return this.dataSource.transaction(async (manager) => {
+      const customer = await manager.findOne(Wallet, {
+        where: { ownerId: params.customerId },
+      });
+      const merchant = await manager.findOne(Wallet, {
+        where: { ownerId: params.merchantId },
+      });
+
+      if (!customer || !merchant) {
+        throw new BadRequestException('Wallet not found');
+      }
+      if (Number(customer.available) < params.amount) {
+        throw new BadRequestException('Insufficient balance');
+      }
+
+      const feePercent = this.config.get<number>('rules.transactionFeePercent', 1.5);
+      const fee = Math.round(params.amount * (feePercent / 100));
+      const merchantCredit = params.amount - fee;
+
+      customer.available = Number(customer.available) - params.amount;
+      merchant.available = Number(merchant.available) + merchantCredit;
+      await manager.save(customer);
+      await manager.save(merchant);
+
+      const txn = manager.create(Transaction, {
+        merchantId: params.merchantId,
+        type: TransactionType.QR,
+        amount: params.amount,
+        fee,
+        status: TransactionStatus.COMPLETED,
+      });
+      return manager.save(txn);
+    });
+  }
 
   async create(dto: CreateTransactionDto) {
     const feePercent = this.config.get<number>('PAYDUKA_FEE_PERCENT', 1.5);
     const reservePercent = this.config.get<number>('MERCHANT_RESERVE_PERCENT', 5);
 
     // ── 1. Card authorization (if card transaction) ──
-    let authCode: string | null = null;
+    let authCode: string | undefined;
     if (dto.type === TransactionType.CARD && dto.cardToken) {
       const auth = await this.paymentRail.authorizeCard({
         token: dto.cardToken,
@@ -50,14 +97,14 @@ export class TransactionService {
     }
 
     // ── 2. Fraud check ──
-    const fraud = await this.fraudService.evaluate({
+    const fraud = await this.fraudService.score({
       merchantId: dto.merchantId,
       customerId: dto.customerWalletId,
       amount: dto.amount,
       type: dto.type,
       metadata: dto.metadata,
     });
-    if (!fraud.approved) {
+    if (!fraud.pass) {
       throw new BadRequestException('Transaction declined by fraud check');
     }
 

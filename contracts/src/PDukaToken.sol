@@ -10,12 +10,12 @@ contract PDukaToken is ERC20, ERC20Burnable, AccessControl {
 
     uint256 public constant MAX_SUPPLY = 21_000_000_000 * 10 ** 18; // 21B
 
-    constructor(address treasury) ERC20("PayDuka", "PDUKA") {
+    constructor() ERC20("PayDuka", "PDUKA") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MINTER_ROLE, msg.sender);
 
-        // Mint entire supply to treasury at genesis
-        _mint(treasury, MAX_SUPPLY);
+        // Mint entire supply to the deployer at genesis
+        _mint(msg.sender, MAX_SUPPLY);
     }
 
     // Override to enforce max supply (redundant since all minted at genesis, but safety)

@@ -6,7 +6,7 @@ import type { TypedContractEvent, TypedDeferredTopicFilter, TypedEventLog, Typed
   
 
   export interface PDukaPoolInterface extends Interface {
-    getFunction(nameOrSignature: "BURN_ADDRESS" | "DEFAULT_ADMIN_ROLE" | "OPERATOR_ROLE" | "SETTLER_ROLE" | "batchNonce" | "batchSettle" | "batches" | "deposit" | "getRoleAdmin" | "grantRole" | "hasRole" | "oracle" | "pause" | "paused" | "pduka" | "poolBalance" | "poolBalanceInZar" | "renounceRole" | "revokeRole" | "setOracle" | "setTreasury" | "supportsInterface" | "totalBurned" | "totalToTreasury" | "treasury" | "unpause" | "withdraw" | "withdrawalNonce" | "withdrawals"): FunctionFragment;
+    getFunction(nameOrSignature: "BURN_ADDRESS" | "DEFAULT_ADMIN_ROLE" | "OPERATOR_ROLE" | "SETTLER_ROLE" | "batchNonce" | "batchSettle" | "batches" | "deposit" | "getRoleAdmin" | "grantRole" | "hasRole" | "oracle" | "pause" | "paused" | "pduka" | "poolBalance" | "poolBalanceInZar" | "renounceRole" | "revokeRole" | "setOracle" | "setTreasury" | "supportsInterface" | "totalBurned" | "totalToTreasury" | "treasury" | "unpause" | "usedBatches" | "withdraw" | "withdrawalNonce" | "withdrawals"): FunctionFragment;
 
     getEvent(nameOrSignatureOrTopic: "BatchSettled" | "Deposited" | "OracleUpdated" | "Paused" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked" | "TreasuryUpdated" | "Unpaused" | "Withdrawn"): EventFragment;
 
@@ -15,7 +15,7 @@ encodeFunctionData(functionFragment: 'DEFAULT_ADMIN_ROLE', values?: undefined): 
 encodeFunctionData(functionFragment: 'OPERATOR_ROLE', values?: undefined): string;
 encodeFunctionData(functionFragment: 'SETTLER_ROLE', values?: undefined): string;
 encodeFunctionData(functionFragment: 'batchNonce', values?: undefined): string;
-encodeFunctionData(functionFragment: 'batchSettle', values: [BigNumberish, BytesLike]): string;
+encodeFunctionData(functionFragment: 'batchSettle', values: [BigNumberish, BigNumberish, BigNumberish, BytesLike]): string;
 encodeFunctionData(functionFragment: 'batches', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'deposit', values: [BigNumberish, BytesLike]): string;
 encodeFunctionData(functionFragment: 'getRoleAdmin', values: [BytesLike]): string;
@@ -36,6 +36,7 @@ encodeFunctionData(functionFragment: 'totalBurned', values?: undefined): string;
 encodeFunctionData(functionFragment: 'totalToTreasury', values?: undefined): string;
 encodeFunctionData(functionFragment: 'treasury', values?: undefined): string;
 encodeFunctionData(functionFragment: 'unpause', values?: undefined): string;
+encodeFunctionData(functionFragment: 'usedBatches', values: [BytesLike]): string;
 encodeFunctionData(functionFragment: 'withdraw', values: [AddressLike, BigNumberish, BytesLike]): string;
 encodeFunctionData(functionFragment: 'withdrawalNonce', values?: undefined): string;
 encodeFunctionData(functionFragment: 'withdrawals', values: [BigNumberish]): string;
@@ -66,6 +67,7 @@ decodeFunctionResult(functionFragment: 'totalBurned', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'totalToTreasury', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'treasury', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'unpause', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'usedBatches', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'withdraw', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'withdrawalNonce', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'withdrawals', data: BytesLike): Result;
@@ -267,7 +269,7 @@ decodeFunctionResult(functionFragment: 'withdrawals', data: BytesLike): Result;
 
     
     batchSettle: TypedContractMethod<
-      [totalVolumeZarCents: BigNumberish, offChainBatchId: BytesLike, ],
+      [totalVolume: BigNumberish, burnAmount: BigNumberish, treasuryAmount: BigNumberish, offChainBatchId: BytesLike, ],
       [void],
       'nonpayable'
     >
@@ -434,6 +436,14 @@ decodeFunctionResult(functionFragment: 'withdrawals', data: BytesLike): Result;
     
 
     
+    usedBatches: TypedContractMethod<
+      [arg0: BytesLike, ],
+      [boolean],
+      'view'
+    >
+    
+
+    
     withdraw: TypedContractMethod<
       [to: AddressLike, zarCents: BigNumberish, offChainRef: BytesLike, ],
       [void],
@@ -486,7 +496,7 @@ getFunction(nameOrSignature: 'batchNonce'): TypedContractMethod<
       'view'
     >;
 getFunction(nameOrSignature: 'batchSettle'): TypedContractMethod<
-      [totalVolumeZarCents: BigNumberish, offChainBatchId: BytesLike, ],
+      [totalVolume: BigNumberish, burnAmount: BigNumberish, treasuryAmount: BigNumberish, offChainBatchId: BytesLike, ],
       [void],
       'nonpayable'
     >;
@@ -589,6 +599,11 @@ getFunction(nameOrSignature: 'unpause'): TypedContractMethod<
       [],
       [void],
       'nonpayable'
+    >;
+getFunction(nameOrSignature: 'usedBatches'): TypedContractMethod<
+      [arg0: BytesLike, ],
+      [boolean],
+      'view'
     >;
 getFunction(nameOrSignature: 'withdraw'): TypedContractMethod<
       [to: AddressLike, zarCents: BigNumberish, offChainRef: BytesLike, ],

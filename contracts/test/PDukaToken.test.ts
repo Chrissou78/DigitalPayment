@@ -1,6 +1,7 @@
 import { expect } from "chai";
-import { ethers } from "hardhat";
-import { PDukaToken } from "../typechain-types";
+import { network } from "hardhat";
+const { ethers } = await network.connect();
+import { PDukaToken } from "../types";
 
 describe("PDukaToken", () => {
   let token: PDukaToken;
@@ -19,9 +20,8 @@ describe("PDukaToken", () => {
   });
 
   it("should mint MAX_SUPPLY to deployer", async () => {
-    const total = await token.totalSupply();
     const max = ethers.parseEther("21000000000"); // 21 billion
-    expect(total).to.equal(max);
+    expect(await token.totalSupply()).to.equal(max);
     expect(await token.balanceOf(owner.address)).to.equal(max);
   });
 
@@ -32,7 +32,6 @@ describe("PDukaToken", () => {
   });
 
   it("should not allow minting beyond MAX_SUPPLY", async () => {
-    // If your contract doesn't have a public mint, verify totalSupply is fixed
     expect(await token.totalSupply()).to.equal(ethers.parseEther("21000000000"));
   });
 });

@@ -1,5 +1,6 @@
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { network } from "hardhat";
+const { ethers } = await network.connect();
 
 describe("PDukaTreasury", () => {
   let token: any, oracle: any, treasury: any;
@@ -23,7 +24,6 @@ describe("PDukaTreasury", () => {
       await oracle.getAddress()
     );
 
-    // Add vault wallets
     await treasury.addVault(vault1.address);
     await treasury.addVault(vault2.address);
     await treasury.addVault(vault3.address);
@@ -34,28 +34,21 @@ describe("PDukaTreasury", () => {
   });
 
   it("should route incoming funds to first vault with capacity", async () => {
-    const amount = ethers.parseEther("500000"); // well under $100K at $0.005
+    const amount = ethers.parseEther("500000");
     await token.approve(await treasury.getAddress(), amount);
     await treasury.receiveFunds(amount);
-
-    // Vault 1 should have the allocation
-    const v1Balance = await treasury.vaultBalance(0);
-    expect(v1Balance).to.equal(amount);
+    expect(await treasury.vaultBalance(0)).to.equal(amount);
   });
 
   it("should overflow to next vault when $100K cap reached", async () => {
-    // $100K at $0.005/token = 20,000,000 tokens
-    const capTokens = ethers.parseEther("20000000");
+    const capTokens = ethers.parseEther("20000000"); // $100K at $0.005
     const extra = ethers.parseEther("5000000");
     const total = capTokens + extra;
 
     await token.approve(await treasury.getAddress(), total);
     await treasury.receiveFunds(total);
 
-    // Vault 1 should be at cap, vault 2 should have the overflow
-    const v1Balance = await treasury.vaultBalance(0);
-    const v2Balance = await treasury.vaultBalance(1);
-    expect(v1Balance).to.equal(capTokens);
-    expect(v2Balance).to.equal(extra);
+    expect(await treasury.vaultBalance(0)).to.equal(capTokens);
+    expect(await treasury.vaultBalance(1)).to.equal(extra);
   });
 });

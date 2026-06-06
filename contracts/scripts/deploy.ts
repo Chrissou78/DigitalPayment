@@ -1,6 +1,7 @@
-import { ethers } from "hardhat";
+import { network } from "hardhat";
 
 async function main() {
+  const { ethers } = await network.connect();
   const [deployer] = await ethers.getSigners();
   console.log("Deployer:", deployer.address);
 
@@ -22,7 +23,7 @@ async function main() {
 
   // 3. Treasury
   const Treasury = await ethers.getContractFactory("PDukaTreasury");
-  const treasury = await Treasury.deploy(tokenAddr, initialPdukaUsd);
+  const treasury = await Treasury.deploy(tokenAddr, oracleAddr);
   await treasury.waitForDeployment();
   const treasuryAddr = await treasury.getAddress();
   console.log("PDukaTreasury:", treasuryAddr);
@@ -43,7 +44,7 @@ async function main() {
 
   // 5. Pool
   const Pool = await ethers.getContractFactory("PDukaPool");
-  const pool = await Pool.deploy(tokenAddr, oracleAddr, treasuryAddr);
+  const pool = await Pool.deploy(tokenAddr, treasuryAddr, oracleAddr);
   await pool.waitForDeployment();
   const poolAddr = await pool.getAddress();
   console.log("PDukaPool:", poolAddr);

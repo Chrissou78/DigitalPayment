@@ -1,25 +1,42 @@
-import { IsString, IsInt, IsPositive, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsOptional,
+  IsPhoneNumber,
+  IsObject,
+  Min,
+  Max,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateRemittanceDto {
-  @IsString()
-  recipientPhone: string;
+  @IsPhoneNumber()
+  recipientPhone!: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   recipientName?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   senderName?: string;
 
   @IsOptional()
-  @IsString()
+  @IsPhoneNumber()
   senderPhone?: string;
 
+  @IsString()
+  @MaxLength(3)
+  currency!: string; // ISO 4217, e.g. 'USD'
+
   @IsInt()
-  @IsPositive()
-  amount: number; // cents
+  @Min(1)
+  @Max(100_000_00) // adjust to your business limit
+  amount!: number; // cents
 
   @IsOptional()
+  @IsObject()
   metadata?: Record<string, any>;
 }

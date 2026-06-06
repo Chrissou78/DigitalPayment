@@ -58,6 +58,15 @@ contract PDukaOracle is AccessControl {
         lastUpdated = block.timestamp;
     }
 
+    function updateRates(uint256 _pdukaUsd, uint256 _usdZar) external onlyRole(ORACLE_ROLE) {
+        require(_pdukaUsd > 0 && _usdZar > 0, "Rate must be > 0");
+        emit PdukaUsdUpdated(pdukaUsd, _pdukaUsd, block.timestamp);
+        emit UsdZarUpdated(usdZar, _usdZar, block.timestamp);
+        pdukaUsd = _pdukaUsd;
+        usdZar = _usdZar;
+        lastUpdated = block.timestamp;
+    }
+
     function setStalenessThreshold(uint256 t) external onlyRole(DEFAULT_ADMIN_ROLE) {
         emit StalenessThresholdUpdated(stalenessThreshold, t);
         stalenessThreshold = t;
@@ -67,7 +76,7 @@ contract PDukaOracle is AccessControl {
 
     /// @notice Returns PDUKA price in ZAR with 18 decimals
     /// @dev pdukaZar = pdukaUsd * usdZar / 1e18
-    function pdukaZar() external view returns (uint256) {
+    function pdukaToZar() external view returns (uint256) {
         require(!isStale(), "Oracle rate is stale");
         return (pdukaUsd * usdZar) / 1e18;
     }
@@ -81,7 +90,7 @@ contract PDukaOracle is AccessControl {
     }
 
     /// @notice Convert PDUKA tokens (18 decimals) to ZAR amount (18 decimals)
-    function pdukaToZar(uint256 pdukaAmount) external view returns (uint256) {
+    function pdukaAmountToZar(uint256 pdukaAmount) external view returns (uint256) {
         require(!isStale(), "Oracle rate is stale");
         uint256 pZar = (pdukaUsd * usdZar) / 1e18;
         return (pdukaAmount * pZar) / 1e18;

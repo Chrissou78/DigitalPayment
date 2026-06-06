@@ -4,9 +4,9 @@ import { DataSource, EntityManager } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
 import { TransactionService } from './transaction.service';
-import { Transaction } from './transaction.entity';
-import { Wallet } from '../wallet/wallet.entity';
-import { LedgerEntry } from '../wallet/ledger-entry.entity';
+import { Transaction } from './entities/transaction.entity';
+import { Wallet } from '../wallet/entities/wallet.entity';
+import { LedgerEntry } from '../wallet/entities/ledger-entry.entity';
 import { FraudService } from '../fraud/fraud.service';
 import { PaymentRailService } from '../payment-rail/payment-rail.service';
 

@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, EntityManager } from 'typeorm';
 import { StakingService } from './staking.service';
-import { Wallet } from '../wallet/wallet.entity';
-import { LedgerEntry } from '../wallet/ledger-entry.entity';
+import { Wallet } from '../wallet/entities/wallet.entity';
+import { LedgerEntry } from '../wallet/entities/ledger-entry.entity';
 
 describe('StakingService', () => {
   let service: StakingService;

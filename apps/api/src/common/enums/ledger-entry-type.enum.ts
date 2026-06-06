@@ -4,4 +4,7 @@ export enum LedgerEntryType {
   FEE = 'FEE',
   ADVANCE = 'ADVANCE',
   REFILL = 'REFILL',
+  STAKE_LOCK = 'STAKE_LOCK',
+  STAKE_UNLOCK = 'STAKE_UNLOCK',
+  STAKING_REWARD = 'STAKING_REWARD',
 }

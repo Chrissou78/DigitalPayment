@@ -1,9 +1,9 @@
-import { IsUUID, IsBoolean } from 'class-validator';
+import { IsUUID, IsBoolean } from "class-validator";
 
 export class RequestAdvanceDto {
   @IsUUID()
-  transactionId: string;
+  transactionId!: string;
 
   @IsBoolean()
-  accept: boolean;
+  accept!: boolean;
 }

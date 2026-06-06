@@ -1,53 +1,57 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn,
-} from 'typeorm';
-import { CashInStatus } from '@payduka/shared';
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
+import { CashInStatus } from "@payduka/shared";
+import { bigintTransformer } from "../../common/transformers/bigint.transformer";
 
-@Entity('cash_in_transactions')
+@Entity("cash_in_transactions")
 export class CashIn {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn("uuid")
+  id!: string;
 
-  @Column('uuid')
-  agentMerchantId: string; // the merchant processing the deposit
+  @Column("uuid")
+  agentMerchantId!: string;
 
-  @Column('uuid')
-  agentWalletId: string;
+  @Column("uuid")
+  agentWalletId!: string;
 
-  @Column('uuid')
-  customerWalletId: string;
-
-  @Column({ nullable: true })
-  customerPhone: string;
-
-  @Column({ type: 'bigint' })
-  depositAmount: number; // cents — the cash amount handed over
-
-  @Column({ type: 'bigint' })
-  customerFee: number;
-
-  @Column({ type: 'bigint' })
-  merchantCommission: number;
-
-  @Column({ type: 'bigint' })
-  protocolFee: number;
-
-  @Column({ type: 'bigint' })
-  netCreditAmount: number; // what the customer wallet actually receives
-
-  @Column({ type: 'enum', enum: CashInStatus, default: CashInStatus.PENDING })
-  status: CashInStatus;
+  @Column("uuid")
+  customerWalletId!: string;
 
   @Column({ nullable: true })
-  confirmationCode: string; // SMS code sent to customer
+  customerPhone!: string;
 
-  @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, any>;
+  @Column({ type: "bigint", transformer: bigintTransformer })
+  depositAmount!: number;
+
+  @Column({ type: "bigint", transformer: bigintTransformer })
+  customerFee!: number;
+
+  @Column({ type: "bigint", transformer: bigintTransformer })
+  merchantCommission!: number;
+
+  @Column({ type: "bigint", transformer: bigintTransformer })
+  protocolFee!: number;
+
+  @Column({ type: "bigint", transformer: bigintTransformer })
+  netCreditAmount!: number;
+
+  @Column({ type: "enum", enum: CashInStatus, default: CashInStatus.PENDING })
+  status!: CashInStatus;
+
+  @Column({ nullable: true })
+  confirmationCode!: string;
+
+  @Column({ type: "jsonb", nullable: true })
+  metadata!: Record<string, any>;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

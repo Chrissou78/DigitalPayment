@@ -2,10 +2,18 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "moduleResolution": "bundler",
     "paths": {
       "@/*": ["./src/*"],
       "@payduka/shared": ["../../packages/shared/src"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "app.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "app.config.ts",
+    "nativewind-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }

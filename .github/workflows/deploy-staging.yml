@@ -28,35 +28,49 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # ── Build in dependency order ──
       - name: Build shared
-        run: cd packages/shared && pnpm build
+        run: pnpm --filter @payduka/shared build
 
       - name: Build API
-        run: cd apps/api && pnpm build
+        run: pnpm --filter @payduka/api build
 
       - name: Build admin dashboard
-        run: cd apps/admin-dashboard && pnpm build
+        run: pnpm --filter @payduka/admin-dashboard build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.STAGING_API_URL }}
 
       # ── Run migrations ──
       - name: Run database migrations
-        run: cd apps/api && pnpm migration:run
+        run: pnpm --filter @payduka/api migration:run
         env:
           DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          DB_SSL: "true"
 
-      # ── Deploy API (example: Docker + SSH) ──
-      - name: Build API Docker image
-        run: |
-          docker build -t payduka-api:staging -f apps/api/Dockerfile .
+      # ── Deploy API ──
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Push to container registry
-        run: |
-          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ${{ vars.REGISTRY_URL }} -u ${{ vars.REGISTRY_USER }} --password-stdin
-          docker tag payduka-api:staging ${{ vars.REGISTRY_URL }}/payduka-api:staging
-          docker push ${{ vars.REGISTRY_URL }}/payduka-api:staging
+      - name: Login to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.REGISTRY_URL }}
+          username: ${{ vars.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      # ── Deploy Admin (example: Vercel) ──
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.REGISTRY_URL }}/payduka-api:staging
+            ${{ vars.REGISTRY_URL }}/payduka-api:staging-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Deploy Admin Dashboard to Vercel ──
       - name: Deploy admin to Vercel
         uses: amondnet/vercel-action@v25
         with:
@@ -64,3 +78,11 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
           working-directory: apps/admin-dashboard
+
+      # ── Post-deploy health check ──
+      - name: Health check
+        run: |
+          sleep 30
+          curl --fail --retry 5 --retry-delay 10 \
+            ${{ vars.STAGING_API_URL }}/health \
+            || exit 1

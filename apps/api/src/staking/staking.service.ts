@@ -1,8 +1,9 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, DataSource } from "typeorm";
-import { Wallet } from "../wallet/wallet.entity";
-import { LedgerEntry } from "../wallet/ledger-entry.entity";
+import { Repository, DataSource, MoreThan } from "typeorm";
+import { Wallet } from "../wallet/entities/wallet.entity";
+import { LedgerEntry } from "../wallet/entities/ledger-entry.entity";
+import { LedgerEntryType } from "../common/enums/ledger-entry-type.enum";
 
 @Injectable()
 export class StakingService {
@@ -41,7 +42,7 @@ export class StakingService {
       // Ledger entries
       await manager.save(LedgerEntry, {
         walletId,
-        type: "STAKE_LOCK",
+        type: LedgerEntryType.STAKE_LOCK,
         amount: -amountCents,
         balanceAfter: wallet.available,
         description: `Staked R${(amountCents / 100).toFixed(2)}`,
@@ -78,7 +79,7 @@ export class StakingService {
 
       await manager.save(LedgerEntry, {
         walletId,
-        type: "STAKE_UNLOCK",
+        type: LedgerEntryType.STAKE_UNLOCK,
         amount: amountCents,
         balanceAfter: wallet.available,
         description: `Unstaked R${(amountCents / 100).toFixed(2)}`,
@@ -100,7 +101,7 @@ export class StakingService {
     const dailyRate = apyPercent / 100 / 365.25;
 
     const stakers = await this.walletRepo.find({
-      where: { staked: /* MoreThan(0) */ } as any,
+      where: { staked: MoreThan(0) },
     });
 
     const stakersWithBalance = stakers.filter((w) => (w.staked ?? 0) > 0);
@@ -116,13 +117,14 @@ export class StakingService {
           where: { id: wallet.id },
           lock: { mode: "pessimistic_write" },
         });
+        if (!w) return;
 
         w.available += reward;
         await manager.save(w);
 
         await manager.save(LedgerEntry, {
           walletId: w.id,
-          type: "STAKING_REWARD",
+          type: LedgerEntryType.STAKING_REWARD,
           amount: reward,
           balanceAfter: w.available,
           description: `Staking reward: R${(reward / 100).toFixed(2)} (${apyPercent}% APY)`,

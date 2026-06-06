@@ -2,8 +2,8 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as pDukaPoolSol from './PDukaPool.sol/index.js';
+export * as pDukaTreasurySol from './PDukaTreasury.sol/index.js';
 export { PDukaOracle__factory } from './PDukaOracle__factory.js';
 export { PDukaToken__factory } from './PDukaToken__factory.js';
-export { PDukaTreasury__factory } from './PDukaTreasury__factory.js';
 export { SettlementRegistry__factory } from './SettlementRegistry__factory.js';
 export { StakingPool__factory } from './StakingPool__factory.js';

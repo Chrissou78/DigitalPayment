@@ -50,18 +50,20 @@ contract StakingPool is Ownable, ReentrancyGuard {
         emit Staked(msg.sender, amount);
     }
 
-    function unstake() external nonReentrant {
+    function unstake(uint256 amount) external nonReentrant {
         Stake storage s = stakes[msg.sender];
         require(s.amount > 0, "Nothing staked");
+        require(amount > 0 && amount <= s.amount, "Invalid unstake amount");
 
         uint256 reward = _pendingReward(msg.sender);
-        uint256 principal = s.amount;
 
-        totalStaked -= principal;
-        delete stakes[msg.sender];
+        s.amount -= amount;
+        s.since = block.timestamp;
+        s.claimedRewards = 0;
+        totalStaked -= amount;
 
-        pduka.safeTransfer(msg.sender, principal + reward);
-        emit Unstaked(msg.sender, principal, reward);
+        pduka.safeTransfer(msg.sender, amount + reward);
+        emit Unstaked(msg.sender, amount, reward);
     }
 
     function claimRewards() external nonReentrant {
@@ -76,6 +78,14 @@ contract StakingPool is Ownable, ReentrancyGuard {
 
     function pendingReward(address user) external view returns (uint256) {
         return _pendingReward(user);
+    }
+
+    function pendingRewards(address user) external view returns (uint256) {
+        return _pendingReward(user);
+    }
+
+    function stakedBalance(address user) external view returns (uint256) {
+        return stakes[user].amount;
     }
 
     function _pendingReward(address user) internal view returns (uint256) {

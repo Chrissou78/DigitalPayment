@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, Repository, EntityManager } from 'typeorm';
 import { WalletService } from './wallet.service';
-import { Wallet } from './wallet.entity';
-import { LedgerEntry } from './ledger-entry.entity';
+import { Wallet } from './entities/wallet.entity';
+import { LedgerEntry } from './entities/ledger-entry.entity';
 
 describe('WalletService', () => {
   let service: WalletService;

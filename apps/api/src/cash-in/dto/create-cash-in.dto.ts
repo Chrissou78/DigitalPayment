@@ -1,12 +1,17 @@
-import { IsUUID, IsInt, IsPositive, IsString, IsOptional } from 'class-validator';
+import {
+  IsInt,
+  IsPositive,
+  IsString,
+  IsOptional,
+} from "class-validator";
 
 export class CreateCashInDto {
   @IsString()
-  customerIdentifier: string; // phone number or wallet ID
+  customerIdentifier!: string;
 
   @IsInt()
   @IsPositive()
-  amount: number; // cents — the cash amount
+  amount!: number;
 
   @IsOptional()
   metadata?: Record<string, any>;

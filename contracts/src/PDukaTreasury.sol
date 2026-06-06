@@ -14,6 +14,10 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  *         When a wallet hits the cap, funds automatically route to the next.
  *         Oracle-fed ZAR/USD rate determines the cap in token terms.
  */
+interface ITreasuryOracle {
+    function pdukaUsd() external view returns (uint256);
+}
+
 contract PDukaTreasury is AccessControl, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
@@ -25,11 +29,10 @@ contract PDukaTreasury is AccessControl, ReentrancyGuard, Pausable {
     // ── Sub-wallet management ──
     address[] public vaults;
     mapping(address => bool) public isVault;
-    mapping(address => uint256) public vaultBalance; // tracked internally
+    mapping(address => uint256) internal assigned; // tracked internally, keyed by vault address
+    ITreasuryOracle public oracle;
 
     uint256 public maxPerVaultUsd = 100_000 * 1e18; // $100,000 in 18-decimal USD
-    uint256 public pdukaUsdRate;                     // PDUKA price in USD, 18 decimals
-                                                     // e.g., $0.005 = 5 * 1e15
 
     // ── Stats ──
     uint256 public totalReceived;
@@ -44,9 +47,9 @@ contract PDukaTreasury is AccessControl, ReentrancyGuard, Pausable {
     event MaxPerVaultUpdated(uint256 oldMax, uint256 newMax);
     event Rebalanced(uint256 vaultsAffected);
 
-    constructor(address _pduka, uint256 _initialPdukaUsdRate) {
+    constructor(address _pduka, address _oracle) {
         pduka = IERC20(_pduka);
-        pdukaUsdRate = _initialPdukaUsdRate;
+        oracle = ITreasuryOracle(_oracle);
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, msg.sender);
@@ -65,7 +68,7 @@ contract PDukaTreasury is AccessControl, ReentrancyGuard, Pausable {
 
     function removeVault(address vault) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(isVault[vault], "Not a vault");
-        require(vaultBalance[vault] == 0, "Vault not empty; disburse first");
+        require(assigned[vault] == 0, "Vault not empty; disburse first");
         isVault[vault] = false;
         // Remove from array
         for (uint256 i = 0; i < vaults.length; i++) {
@@ -82,13 +85,12 @@ contract PDukaTreasury is AccessControl, ReentrancyGuard, Pausable {
         return vaults.length;
     }
 
-    // ── Oracle Rate ──
-
-    function updateRate(uint256 newRate) external onlyRole(ORACLE_ROLE) {
-        require(newRate > 0, "Rate must be > 0");
-        emit RateUpdated(pdukaUsdRate, newRate);
-        pdukaUsdRate = newRate;
+    // C5: balance of the vault at a given index (spec calls vaultBalance(0), (1), ...)
+    function vaultBalance(uint256 index) external view returns (uint256) {
+        return assigned[vaults[index]];
     }
+
+    // ── Oracle Rate ──
 
     function setMaxPerVaultUsd(uint256 newMax) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(newMax >= 10_000 * 1e18, "Min $10K per vault");
@@ -99,10 +101,9 @@ contract PDukaTreasury is AccessControl, ReentrancyGuard, Pausable {
     // ── Max tokens per vault (derived from rate) ──
 
     function maxTokensPerVault() public view returns (uint256) {
-        require(pdukaUsdRate > 0, "Rate not set");
-        // maxPerVaultUsd / pdukaUsdRate = max tokens
-        // Both are 18 decimals, so multiply by 1e18 to keep precision
-        return (maxPerVaultUsd * 1e18) / pdukaUsdRate;
+        uint256 rate = oracle.pdukaUsd();
+        require(rate > 0, "Rate not set");
+        return (maxPerVaultUsd * 1e18) / rate;
     }
 
     // ── Receive Funds ──
@@ -118,17 +119,17 @@ contract PDukaTreasury is AccessControl, ReentrancyGuard, Pausable {
 
         for (uint256 i = 0; i < vaults.length && remaining > 0; i++) {
             uint256 available = 0;
-            if (vaultBalance[vaults[i]] < cap) {
-                available = cap - vaultBalance[vaults[i]];
+            if (assigned[vaults[i]] < cap) {
+                available = cap - assigned[vaults[i]];
             }
             if (available == 0) continue;
 
             uint256 toSend = remaining > available ? available : remaining;
             pduka.safeTransfer(vaults[i], toSend);
-            vaultBalance[vaults[i]] += toSend;
+            assigned[vaults[i]] += toSend;
             remaining -= toSend;
 
-            emit FundsReceived(toSend, vaults[i], vaultBalance[vaults[i]]);
+            emit FundsReceived(toSend, vaults[i], assigned[vaults[i]]);
         }
 
         // If all vaults are full, keep remainder in this contract as overflow
@@ -161,8 +162,8 @@ contract PDukaTreasury is AccessControl, ReentrancyGuard, Pausable {
 
         // DESIGN CHOICE: Keep all tokens in THIS contract, vaultBalance
         // is purely logical. This avoids needing vault approvals.
-        require(vaultBalance[vault] >= amount, "Vault insufficient balance");
-        vaultBalance[vault] -= amount;
+        require(assigned[vault] >= amount, "Vault insufficient balance");
+        assigned[vault] -= amount;
         pduka.safeTransfer(to, amount);
         totalDisbursed += amount;
 
@@ -179,9 +180,9 @@ contract PDukaTreasury is AccessControl, ReentrancyGuard, Pausable {
 
         // Collect overflow from vaults exceeding cap
         for (uint256 i = 0; i < vaults.length; i++) {
-            if (vaultBalance[vaults[i]] > cap) {
-                uint256 excess = vaultBalance[vaults[i]] - cap;
-                vaultBalance[vaults[i]] = cap;
+            if (assigned[vaults[i]] > cap) {
+                uint256 excess = assigned[vaults[i]] - cap;
+                assigned[vaults[i]] = cap;
                 overflow += excess;
                 affected++;
             }
@@ -189,10 +190,10 @@ contract PDukaTreasury is AccessControl, ReentrancyGuard, Pausable {
 
         // Redistribute overflow to vaults with capacity
         for (uint256 i = 0; i < vaults.length && overflow > 0; i++) {
-            if (vaultBalance[vaults[i]] < cap) {
-                uint256 available = cap - vaultBalance[vaults[i]];
+            if (assigned[vaults[i]] < cap) {
+                uint256 available = cap - assigned[vaults[i]];
                 uint256 toAssign = overflow > available ? available : overflow;
-                vaultBalance[vaults[i]] += toAssign;
+                assigned[vaults[i]] += toAssign;
                 overflow -= toAssign;
                 affected++;
             }
@@ -211,17 +212,17 @@ contract PDukaTreasury is AccessControl, ReentrancyGuard, Pausable {
     function totalAssignedToVaults() external view returns (uint256) {
         uint256 total = 0;
         for (uint256 i = 0; i < vaults.length; i++) {
-            total += vaultBalance[vaults[i]];
+            total += assigned[vaults[i]];
         }
         return total;
     }
 
     function unassignedBalance() external view returns (uint256) {
-        uint256 assigned = 0;
+        uint256 assignedTotal = 0;
         for (uint256 i = 0; i < vaults.length; i++) {
-            assigned += vaultBalance[vaults[i]];
+            assignedTotal += assigned[vaults[i]];
         }
-        return pduka.balanceOf(address(this)) - assigned;
+        return pduka.balanceOf(address(this)) - assignedTotal;
     }
 
     function getVaultInfo(uint256 index)
@@ -230,7 +231,7 @@ contract PDukaTreasury is AccessControl, ReentrancyGuard, Pausable {
         returns (address vault, uint256 balance, uint256 capacityRemaining)
     {
         vault = vaults[index];
-        balance = vaultBalance[vault];
+        balance = assigned[vault];
         uint256 cap = maxTokensPerVault();
         capacityRemaining = balance >= cap ? 0 : cap - balance;
     }

@@ -7,75 +7,75 @@ import { RemittanceStatus } from '@payduka/shared';
 @Entity('remittances')
 export class Remittance {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   // Sender side
   @Column('uuid')
-  senderMerchantId: string; // merchant where sender deposited cash
+  senderMerchantId!: string; // merchant where sender deposited cash
 
   @Column('uuid')
-  senderMerchantWalletId: string;
+  senderMerchantWalletId!: string;
 
   @Column({ nullable: true })
-  senderPhone: string;
+  senderPhone!: string;
 
   @Column({ nullable: true })
-  senderName: string;
+  senderName!: string;
 
   // Recipient side
   @Column()
-  recipientPhone: string;
+  recipientPhone!: string;
 
   @Column({ nullable: true })
-  recipientName: string;
+  recipientName!: string;
 
   @Column('uuid', { nullable: true })
-  recipientWalletId: string;
+  recipientWalletId!: string;
 
   @Column('uuid', { nullable: true })
-  collectingMerchantId: string; // merchant where recipient collects
+  collectingMerchantId!: string; // merchant where recipient collects
 
   @Column('uuid', { nullable: true })
-  collectingMerchantWalletId: string;
+  collectingMerchantWalletId!: string;
 
   // Amounts
   @Column({ type: 'bigint' })
-  sendAmount: number; // cents — cash handed in by sender
+  sendAmount!: number; // cents — cash handed in by sender
 
   @Column({ type: 'bigint' })
-  senderFee: number;
+  senderFee!: number;
 
   @Column({ type: 'bigint' })
-  sendingMerchantCommission: number;
+  sendingMerchantCommission!: number;
 
   @Column({ type: 'bigint' })
-  receivingMerchantCommission: number;
+  receivingMerchantCommission!: number;
 
   @Column({ type: 'bigint' })
-  protocolFee: number;
+  protocolFee!: number;
 
   @Column({ type: 'bigint' })
-  recipientAmount: number; // what recipient actually gets
+  recipientAmount!: number; // what recipient actually gets
 
   // Collection
   @Column({ length: 8 })
-  collectionCode: string; // unique code for recipient to collect
+  collectionCode!: string; // unique code for recipient to collect
 
   @Column({ type: 'timestamp', nullable: true })
-  expiresAt: Date; // collection code expiry (72 hours)
+  expiresAt!: Date; // collection code expiry (72 hours)
 
   @Column({ type: 'enum', enum: RemittanceStatus, default: RemittanceStatus.INITIATED })
-  status: RemittanceStatus;
+  status!: RemittanceStatus;
 
   @Column({ type: 'timestamp', nullable: true })
-  collectedAt: Date;
+  collectedAt!: Date;
 
   @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, any>;
+  metadata!: Record<string, any>;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

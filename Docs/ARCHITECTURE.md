@@ -19,55 +19,78 @@ off-chain for speed, cost, and simplicity.
 
 ## 2. System Layers
 
-┌────────────────────────────────────────────────────────────┐
-│                     PRESENTATION LAYER                     │
-│                                                            │
-│ Customer App      Merchant PoS      Admin Panel            │
-│ (React Native)    (React Native)    (Next.js)              │
-│                                                            │
-│ Users see ZAR only.                                        │
-│ No wallets.  No gas.  No tokens.                           │
-└──────────────────────────────┬─────────────────────────────┘
-                               │
-                       REST API + WebSocket
-                               ▼
-┌──────────────────────────────────────────────────────────┐
-│                        ENGINE LAYER                      │
-│                                                          │
-│                   NestJS API   (apps/api/)               │
-│  ┌───────────────────────────────────────────────────┐   │
-│  │ PostgreSQL      Redis          BullMQ             │   │
-│  │ ledger          locks          refill             │   │
-│  │ wallets         cache          settlement         │   │
-│  │ transactions                   jobs               │   │
-│  │ KYC, staking                                      │   │
-│  └───────────────────────────────────────────────────┘   │
-│                                                          │
-│ Source of truth for all balances.                        │
-│ Payments, cash-ins, remittances, staking                 │
-│ are instant DB operations.  No gas.  No chain.           │
-└──────────────────────────────┬───────────────────────────┘
-                               │
-                  Hourly batch / 10-min oracle
-                               ▼
-┌──────────────────────────────────────────────────────────┐
-│                BLOCKCHAIN LAYER  (Polygon)               │
-│                                                          │
-│ PDukaToken      PDukaPool       PDukaOracle              │
-│ (ERC-20)        (custody)       (PDUKA/ZAR rate)         │
-│                                                          │
-│ PDukaTreasury               StakingPool                  │
-│ (multi-vault,               (APY yield)                  │
-│  $100K cap / vault)                                      │
-│                                                          │
-│ On-chain operations:                                     │
-│   batch burn  (0.5% of volume)                           │
-│   treasury skim  (2%)                                    │
-│   withdrawals / off-ramp                                 │
-│   staking deposits / rewards                             │
-│                                                          │
-│ All verifiable on Polygonscan.                           │
-└──────────────────────────────────────────────────────────┘
+╔══════════════════════════════════════════════════════════════════╗
+║                      PRESENTATION LAYER                         ║
+║                                                                  ║
+║   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐        ║
+║   │ Customer App  │   │ Merchant PoS │   │    Admin     │        ║
+║   │ React Native  │   │ React Native │   │   Next.js    │        ║
+║   │  (Expo 56)    │   │  (Expo 56)   │   │    15.x      │        ║
+║   └──────┬───────┘   └──────┬───────┘   └──────┬───────┘        ║
+║          │                  │                   │                 ║
+║          │    Users see ZAR only.               │                 ║
+║          │    No wallets, no gas, no tokens.    │                 ║
+╚══════════╪══════════════════╪═══════════════════╪════════════════╝
+           │                  │                   │
+           │         REST API + WebSocket         │
+           └──────────────────┼───────────────────┘
+                              │
+                              ▼
+╔══════════════════════════════════════════════════════════════════╗
+║                        ENGINE LAYER                              ║
+║                                                                  ║
+║                    NestJS 11  (apps/api/)                         ║
+║                                                                  ║
+║   ┌────────────────┐  ┌─────────────┐  ┌──────────────────┐     ║
+║   │  PostgreSQL    │  │    Redis     │  │     BullMQ       │     ║
+║   │  (Supabase)    │  │   7-alpine   │  │                  │     ║
+║   │                │  │              │  │  • refill jobs    │     ║
+║   │ • ledger       │  │ • locks      │  │  • settlement    │     ║
+║   │ • wallets      │  │ • cache      │  │    batch jobs    │     ║
+║   │ • transactions │  │ • sessions   │  │  • notification  │     ║
+║   │ • KYC          │  │ • pub/sub    │  │    dispatch      │     ║
+║   │ • staking      │  │              │  │                  │     ║
+║   │ • advances     │  │              │  │                  │     ║
+║   │ • fraud alerts │  │              │  │                  │     ║
+║   └────────────────┘  └─────────────┘  └──────────────────┘     ║
+║                                                                  ║
+║   Source of truth for ALL balances and transactions.             ║
+║   Payments, cash-ins, remittances, staking = instant DB ops.    ║
+║   No gas fees. No chain interaction for daily operations.        ║
+╚══════════════════════╦═══════════════════════════════════════════╝
+                       ║
+                       ║  Hourly batch settlement
+                       ║  10-min oracle rate sync
+                       ║  On-demand withdrawals
+                       ▼
+╔══════════════════════════════════════════════════════════════════╗
+║                   BLOCKCHAIN LAYER  (Polygon PoS)                ║
+║                                                                  ║
+║   ┌────────────────┐  ┌────────────────┐  ┌────────────────┐    ║
+║   │  PDukaToken    │  │   PDukaPool    │  │  PDukaOracle   │    ║
+║   │                │  │                │  │                │    ║
+║   │  ERC-20        │  │  Custody pool  │  │  PDUKA/USD     │    ║
+║   │  21B supply    │  │  Deposit       │  │  USD/ZAR       │    ║
+║   │  Burnable      │  │  BatchSettle   │  │  → PDUKA/ZAR   │    ║
+║   │                │  │  Withdraw      │  │  1h staleness  │    ║
+║   └────────────────┘  └────────────────┘  └────────────────┘    ║
+║                                                                  ║
+║   ┌────────────────┐  ┌────────────────┐                         ║
+║   │ PDukaTreasury  │  │  StakingPool   │                         ║
+║   │                │  │                │                         ║
+║   │  Multi-vault   │  │  8–15% APY     │                         ║
+║   │  $100K cap per │  │  Stake/Unstake │                         ║
+║   │  vault         │  │  ClaimRewards  │                         ║
+║   │  Auto-overflow │  │  Admin-set APY │                         ║
+║   └────────────────┘  └────────────────┘                         ║
+║                                                                  ║
+║   On-chain operations:                                           ║
+║     • Batch burn ─────────── 0.5% of transaction volume          ║
+║     • Treasury skim ──────── 2.0% of transaction volume          ║
+║     • Withdrawals / off-ramp (merchant → bank or wallet)         ║
+║     • Staking deposits and reward distribution                   ║
+║   All verifiable on Polygonscan.                                 ║
+╚══════════════════════════════════════════════════════════════════╝
 
 ## 3. Account Model — Virtual Accounts
 

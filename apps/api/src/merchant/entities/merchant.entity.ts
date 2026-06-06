@@ -1,8 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn, OneToOne,
+  CreateDateColumn, UpdateDateColumn,
 } from 'typeorm';
-import { Wallet } from '../../wallet/entities/wallet.entity';
 
 @Entity('merchants')
 export class Merchant {
@@ -38,9 +37,6 @@ export class Merchant {
 
   @Column({ type: 'decimal', precision: 5, scale: 4, default: 0 })
   chargebackRate: number;
-
-  @OneToOne(() => Wallet, (wallet) => wallet.merchant)
-  wallet: Wallet;
 
   @CreateDateColumn()
   createdAt: Date;

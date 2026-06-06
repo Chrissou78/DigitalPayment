@@ -6,7 +6,7 @@ import type { TypedContractEvent, TypedDeferredTopicFilter, TypedEventLog, Typed
   
 
   export interface StakingPoolInterface extends Interface {
-    getFunction(nameOrSignature: "BPS" | "SECONDS_PER_YEAR" | "apyBps" | "claimRewards" | "owner" | "pduka" | "pendingReward" | "renounceOwnership" | "setApy" | "stake" | "stakes" | "totalStaked" | "transferOwnership" | "unstake"): FunctionFragment;
+    getFunction(nameOrSignature: "BPS" | "SECONDS_PER_YEAR" | "apyBps" | "claimRewards" | "owner" | "pduka" | "pendingReward" | "pendingRewards" | "renounceOwnership" | "setApy" | "stake" | "stakedBalance" | "stakes" | "totalStaked" | "transferOwnership" | "unstake"): FunctionFragment;
 
     getEvent(nameOrSignatureOrTopic: "ApyUpdated" | "OwnershipTransferred" | "RewardClaimed" | "Staked" | "Unstaked"): EventFragment;
 
@@ -17,13 +17,15 @@ encodeFunctionData(functionFragment: 'claimRewards', values?: undefined): string
 encodeFunctionData(functionFragment: 'owner', values?: undefined): string;
 encodeFunctionData(functionFragment: 'pduka', values?: undefined): string;
 encodeFunctionData(functionFragment: 'pendingReward', values: [AddressLike]): string;
+encodeFunctionData(functionFragment: 'pendingRewards', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'renounceOwnership', values?: undefined): string;
 encodeFunctionData(functionFragment: 'setApy', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'stake', values: [BigNumberish]): string;
+encodeFunctionData(functionFragment: 'stakedBalance', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'stakes', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'totalStaked', values?: undefined): string;
 encodeFunctionData(functionFragment: 'transferOwnership', values: [AddressLike]): string;
-encodeFunctionData(functionFragment: 'unstake', values?: undefined): string;
+encodeFunctionData(functionFragment: 'unstake', values: [BigNumberish]): string;
 
     decodeFunctionResult(functionFragment: 'BPS', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'SECONDS_PER_YEAR', data: BytesLike): Result;
@@ -32,9 +34,11 @@ decodeFunctionResult(functionFragment: 'claimRewards', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'owner', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'pduka', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'pendingReward', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'pendingRewards', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'renounceOwnership', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'setApy', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'stake', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'stakedBalance', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'stakes', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'totalStaked', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Result;
@@ -192,6 +196,14 @@ decodeFunctionResult(functionFragment: 'unstake', data: BytesLike): Result;
     
 
     
+    pendingRewards: TypedContractMethod<
+      [user: AddressLike, ],
+      [bigint],
+      'view'
+    >
+    
+
+    
     renounceOwnership: TypedContractMethod<
       [],
       [void],
@@ -212,6 +224,14 @@ decodeFunctionResult(functionFragment: 'unstake', data: BytesLike): Result;
       [amount: BigNumberish, ],
       [void],
       'nonpayable'
+    >
+    
+
+    
+    stakedBalance: TypedContractMethod<
+      [user: AddressLike, ],
+      [bigint],
+      'view'
     >
     
 
@@ -241,7 +261,7 @@ decodeFunctionResult(functionFragment: 'unstake', data: BytesLike): Result;
 
     
     unstake: TypedContractMethod<
-      [],
+      [amount: BigNumberish, ],
       [void],
       'nonpayable'
     >
@@ -285,6 +305,11 @@ getFunction(nameOrSignature: 'pendingReward'): TypedContractMethod<
       [bigint],
       'view'
     >;
+getFunction(nameOrSignature: 'pendingRewards'): TypedContractMethod<
+      [user: AddressLike, ],
+      [bigint],
+      'view'
+    >;
 getFunction(nameOrSignature: 'renounceOwnership'): TypedContractMethod<
       [],
       [void],
@@ -299,6 +324,11 @@ getFunction(nameOrSignature: 'stake'): TypedContractMethod<
       [amount: BigNumberish, ],
       [void],
       'nonpayable'
+    >;
+getFunction(nameOrSignature: 'stakedBalance'): TypedContractMethod<
+      [user: AddressLike, ],
+      [bigint],
+      'view'
     >;
 getFunction(nameOrSignature: 'stakes'): TypedContractMethod<
       [arg0: AddressLike, ],
@@ -316,7 +346,7 @@ getFunction(nameOrSignature: 'transferOwnership'): TypedContractMethod<
       'nonpayable'
     >;
 getFunction(nameOrSignature: 'unstake'): TypedContractMethod<
-      [],
+      [amount: BigNumberish, ],
       [void],
       'nonpayable'
     >;
