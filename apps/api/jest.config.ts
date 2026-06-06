@@ -12,7 +12,7 @@ const config: Config = {
   testEnvironment: 'node',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
-    '^@payduka/shared$': '<rootDir>/../../packages/shared/src',
+    '^@payduka/shared$': '<rootDir>/../../../packages/shared/src',
   },
 };
 

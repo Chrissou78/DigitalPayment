@@ -9,7 +9,7 @@ import { TransactionEvent } from './entities/transaction-event.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionStatus } from '../common/enums/transaction-status.enum';
 import { TransactionType } from '../common/enums/transaction-type.enum';
-import { LedgerEntryType } from '../common/enums/ledger-entry-type.enum';
+import { LedgerEntryType, LedgerReferenceType } from '@payduka/shared';
 
 import { Wallet } from '../wallet/entities/wallet.entity';
 import { WalletService } from '../wallet/wallet.service';
@@ -145,7 +145,8 @@ export class TransactionService {
           queryRunner,
           dto.customerWalletId,
           dto.amount,
-          LedgerEntryType.AVAILABLE,
+          LedgerEntryType.DEBIT,
+          LedgerReferenceType.PAYMENT,
           savedTxn.id,
           `Payment to ${merchant.businessName}`,
         );
@@ -156,7 +157,8 @@ export class TransactionService {
         queryRunner,
         merchantWallet.id,
         merchantCredit - reserve,
-        LedgerEntryType.AVAILABLE,
+        LedgerEntryType.CREDIT,
+        LedgerReferenceType.PAYMENT,
         savedTxn.id,
         `Sale received (net of fee)`,
       );
@@ -166,7 +168,8 @@ export class TransactionService {
         queryRunner,
         merchantWallet.id,
         reserve,
-        LedgerEntryType.RESERVED,
+        LedgerEntryType.RESERVE_HOLD,
+        LedgerReferenceType.PAYMENT,
         savedTxn.id,
         `Rolling reserve (${reservePercent}%)`,
       );
@@ -178,7 +181,8 @@ export class TransactionService {
         queryRunner,
         merchantWallet.id,
         0, // fee is already deducted
-        LedgerEntryType.FEE,
+        LedgerEntryType.FEE_REVENUE,
+        LedgerReferenceType.FEE,
         savedTxn.id,
         `PayDuka fee: R${(fee / 100).toFixed(2)}`,
       );

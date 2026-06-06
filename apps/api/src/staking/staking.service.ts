@@ -3,7 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, DataSource, MoreThan } from "typeorm";
 import { Wallet } from "../wallet/entities/wallet.entity";
 import { LedgerEntry } from "../wallet/entities/ledger-entry.entity";
-import { LedgerEntryType } from "../common/enums/ledger-entry-type.enum";
+import { LedgerEntryType, LedgerReferenceType } from '@payduka/shared';
 
 @Injectable()
 export class StakingService {
@@ -43,6 +43,7 @@ export class StakingService {
       await manager.save(LedgerEntry, {
         walletId,
         type: LedgerEntryType.STAKE_LOCK,
+        referenceType: LedgerReferenceType.STAKING,
         amount: -amountCents,
         balanceAfter: wallet.available,
         description: `Staked R${(amountCents / 100).toFixed(2)}`,
@@ -80,6 +81,7 @@ export class StakingService {
       await manager.save(LedgerEntry, {
         walletId,
         type: LedgerEntryType.STAKE_UNLOCK,
+        referenceType: LedgerReferenceType.STAKING,
         amount: amountCents,
         balanceAfter: wallet.available,
         description: `Unstaked R${(amountCents / 100).toFixed(2)}`,
@@ -125,6 +127,7 @@ export class StakingService {
         await manager.save(LedgerEntry, {
           walletId: w.id,
           type: LedgerEntryType.STAKING_REWARD,
+        referenceType: LedgerReferenceType.STAKING,
           amount: reward,
           balanceAfter: w.available,
           description: `Staking reward: R${(reward / 100).toFixed(2)} (${apyPercent}% APY)`,

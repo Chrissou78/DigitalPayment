@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
-  CashInStatus, LedgerEntryType, KycTier,
+  CashInStatus, LedgerEntryType, LedgerReferenceType, KycTier,
   CASH_IN_FEE_TIERS, KYC_LIMITS, CashInFeeTier,
 } from '@payduka/shared';
 
@@ -166,7 +166,8 @@ export class CashInService {
         queryRunner,
         cashIn.agentWalletId,
         cashIn.depositAmount,
-        LedgerEntryType.CASH_IN,
+        LedgerEntryType.DEBIT,
+        LedgerReferenceType.CASH_IN,
         cashIn.id,
         `Cash-in float debit: R${(cashIn.depositAmount / 100).toFixed(2)}`,
       );
@@ -176,7 +177,8 @@ export class CashInService {
         queryRunner,
         cashIn.customerWalletId,
         cashIn.netCreditAmount,
-        LedgerEntryType.CASH_IN,
+        LedgerEntryType.CREDIT,
+        LedgerReferenceType.CASH_IN,
         cashIn.id,
         `Cash deposit: R${(cashIn.netCreditAmount / 100).toFixed(2)}`,
       );
@@ -186,7 +188,8 @@ export class CashInService {
         queryRunner,
         cashIn.agentWalletId,
         cashIn.merchantCommission,
-        LedgerEntryType.COMMISSION,
+        LedgerEntryType.CREDIT,
+        LedgerReferenceType.COMMISSION,
         cashIn.id,
         `Cash-in commission: R${(cashIn.merchantCommission / 100).toFixed(2)}`,
       );

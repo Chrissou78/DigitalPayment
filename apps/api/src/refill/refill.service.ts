@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { Refill } from './entities/refill.entity';
 import { RefillStatus } from '../common/enums/refill-status.enum';
 import { WalletService } from '../wallet/wallet.service';
+import { LedgerEntryType, LedgerReferenceType } from '@payduka/shared';
 import { PaymentRailService } from '../payment-rail/payment-rail.service';
 
 @Injectable()
@@ -163,13 +164,12 @@ export class RefillService {
     await queryRunner.startTransaction();
 
     try {
-      const { LedgerEntryType } = await import('../common/enums/ledger-entry-type.enum');
-
       await this.walletService.credit(
         queryRunner,
         refill.walletId,
         refill.amount,
-        LedgerEntryType.REFILL,
+        LedgerEntryType.CREDIT,
+        LedgerReferenceType.REFILL,
         refill.id,
         `Wallet refill: R${(refill.amount / 100).toFixed(2)}`,
       );

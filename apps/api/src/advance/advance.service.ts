@@ -4,7 +4,7 @@ import { Repository, DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Advance } from './entities/advance.entity';
 import { AdvanceStatus } from '../common/enums/advance-status.enum';
-import { LedgerEntryType } from '../common/enums/ledger-entry-type.enum';
+import { LedgerEntryType, LedgerReferenceType } from '@payduka/shared';
 import { WalletService } from '../wallet/wallet.service';
 import { MerchantService } from '../merchant/merchant.service';
 import { TransactionService } from '../transaction/transaction.service';
@@ -96,7 +96,8 @@ export class AdvanceService {
         queryRunner,
         wallet.id,
         offer.advanceAmount,
-        LedgerEntryType.ADVANCE,
+        LedgerEntryType.ADVANCE_CREDIT,
+        LedgerReferenceType.ADVANCE,
         transactionId,
         `Card advance: R${(offer.advanceAmount / 100).toFixed(2)}`,
       );
@@ -155,7 +156,8 @@ export class AdvanceService {
           queryRunner,
           advance.merchantWalletId,
           remainder,
-          LedgerEntryType.AVAILABLE,
+          LedgerEntryType.CREDIT,
+          LedgerReferenceType.ADVANCE,
           transactionId,
           `Card settlement remainder after advance`,
         );

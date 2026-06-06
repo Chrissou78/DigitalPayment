@@ -1,29 +1,19 @@
-import {
-  IsUUID,
-  IsInt,
-  IsPositive,
-  IsEnum,
-  IsOptional,
-  IsString,
-} from "class-validator";
-import { LedgerEntryType } from "../../common/enums/ledger-entry-type.enum";
+import { IsUUID, IsInt, IsPositive, IsEnum, IsOptional, IsString } from 'class-validator';
+import { LedgerEntryType } from '@payduka/shared';
 
 export class CreditWalletDto {
   @IsUUID()
-  walletId!: string;
+  walletId: string;
 
-  @IsInt()
-  @IsPositive()
-  amount!: number;
+  @IsInt() @IsPositive()
+  amount: number; // cents
 
   @IsEnum(LedgerEntryType)
-  type!: LedgerEntryType;
+  type: LedgerEntryType;
 
-  @IsOptional()
-  @IsUUID()
+  @IsOptional() @IsUUID()
   transactionId?: string;
 
-  @IsOptional()
-  @IsString()
+  @IsOptional() @IsString()
   description?: string;
 }

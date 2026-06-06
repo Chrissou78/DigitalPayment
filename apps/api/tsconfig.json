@@ -22,9 +22,5 @@
       "@payduka/shared": ["../../packages/shared/src"],
       "@payduka/shared/*": ["../../packages/shared/src/*"]
     }
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts"
-  ]
+  }
 }

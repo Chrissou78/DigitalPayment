@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
-  RemittanceStatus, LedgerEntryType,
+  RemittanceStatus, LedgerEntryType, LedgerReferenceType,
   REMITTANCE_FEE_TIERS, RemittanceFeeTier,
 } from '@payduka/shared';
 
@@ -74,7 +74,8 @@ export class RemittanceService {
         queryRunner,
         senderMerchantWalletId,
         dto.amount,
-        LedgerEntryType.REMITTANCE_OUT,
+        LedgerEntryType.DEBIT,
+        LedgerReferenceType.REMITTANCE,
         null, // txn ID set below
         `Remittance send: R${(dto.amount / 100).toFixed(2)} to ${dto.recipientPhone}`,
       );
@@ -84,7 +85,8 @@ export class RemittanceService {
         queryRunner,
         senderMerchantWalletId,
         tier.sendingMerchantCommission,
-        LedgerEntryType.COMMISSION,
+        LedgerEntryType.CREDIT,
+        LedgerReferenceType.COMMISSION,
         null,
         `Remittance send commission`,
       );
@@ -172,7 +174,8 @@ export class RemittanceService {
         queryRunner,
         collectingMerchantWalletId,
         remittance.recipientAmount,
-        LedgerEntryType.REMITTANCE_IN,
+        LedgerEntryType.CREDIT,
+        LedgerReferenceType.REMITTANCE,
         remittance.id,
         `Remittance collection: R${(remittance.recipientAmount / 100).toFixed(2)}`,
       );
@@ -182,7 +185,8 @@ export class RemittanceService {
         queryRunner,
         collectingMerchantWalletId,
         remittance.receivingMerchantCommission,
-        LedgerEntryType.COMMISSION,
+        LedgerEntryType.CREDIT,
+        LedgerReferenceType.COMMISSION,
         remittance.id,
         `Remittance collection commission`,
       );

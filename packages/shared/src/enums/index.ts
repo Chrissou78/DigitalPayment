@@ -2,6 +2,7 @@ export { Role } from './role.enum';
 export { TransactionStatus } from './transaction-status.enum';
 export { TransactionType } from './transaction-type.enum';
 export { LedgerEntryType } from './ledger-entry-type.enum';
+export { LedgerReferenceType } from './ledger-reference-type.enum';
 export { WalletStatus } from './wallet-status.enum';
 export { AdvanceStatus } from './advance-status.enum';
 export { RefillStatus } from './refill-status.enum';

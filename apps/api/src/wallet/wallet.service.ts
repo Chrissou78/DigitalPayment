@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryRunner } from 'typeorm';
 import { Wallet } from './entities/wallet.entity';
 import { LedgerEntry } from './entities/ledger-entry.entity';
-import { LedgerEntryType } from '../common/enums/ledger-entry-type.enum';
+import { LedgerEntryType } from '@payduka/shared';
 import { WalletStatus } from '../common/enums/wallet-status.enum';
 
 @Injectable()
@@ -34,7 +34,8 @@ export class WalletService {
     walletId: string,
     amount: number,
     type: LedgerEntryType,
-    transactionId: string,
+    referenceType: string | null,
+    referenceId: string | null,
     description: string,
   ): Promise<LedgerEntry> {
     // Lock the wallet row
@@ -59,7 +60,8 @@ export class WalletService {
       type,
       amount: -amount,
       balanceAfter: wallet.available,
-      transactionId,
+      referenceType,
+      referenceId,
       description,
     });
     return qr.manager.save(entry);
@@ -70,7 +72,8 @@ export class WalletService {
     walletId: string,
     amount: number,
     type: LedgerEntryType,
-    transactionId: string,
+    referenceType: string | null,
+    referenceId: string | null,
     description: string,
   ): Promise<LedgerEntry> {
     const wallet = await qr.manager.findOne(Wallet, {
@@ -82,7 +85,7 @@ export class WalletService {
       throw new BadRequestException('Wallet not available');
     }
 
-    if (type === LedgerEntryType.RESERVED) {
+    if (type === LedgerEntryType.RESERVE_HOLD) {
       wallet.reserved = Number(wallet.reserved) + amount;
     } else {
       wallet.available = Number(wallet.available) + amount;
@@ -95,10 +98,11 @@ export class WalletService {
       type,
       amount: +amount,
       balanceAfter:
-        type === LedgerEntryType.RESERVED
+        type === LedgerEntryType.RESERVE_HOLD
           ? wallet.reserved
           : wallet.available,
-      transactionId,
+      referenceType,
+      referenceId,
       description,
     });
     return qr.manager.save(entry);

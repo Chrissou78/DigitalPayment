@@ -1,12 +1,14 @@
+// Accounting primitive recorded in ledger_entries.type.
+// Business context (payment, remittance, cash-in, ...) goes in reference_type.
 export enum LedgerEntryType {
-  AVAILABLE = 'AVAILABLE',
-  RESERVED = 'RESERVED',
-  FEE = 'FEE',
-  ADVANCE = 'ADVANCE',
-  REFILL = 'REFILL',
-  CASH_IN = 'CASH_IN',
-  CASH_OUT = 'CASH_OUT',
-  REMITTANCE_IN = 'REMITTANCE_IN',
-  REMITTANCE_OUT = 'REMITTANCE_OUT',
-  COMMISSION = 'COMMISSION',
+  DEBIT = 'DEBIT',
+  CREDIT = 'CREDIT',
+  RESERVE_HOLD = 'RESERVE_HOLD',
+  RESERVE_RELEASE = 'RESERVE_RELEASE',
+  STAKE_LOCK = 'STAKE_LOCK',
+  STAKE_UNLOCK = 'STAKE_UNLOCK',
+  STAKING_REWARD = 'STAKING_REWARD',
+  FEE_REVENUE = 'FEE_REVENUE',
+  ADVANCE_CREDIT = 'ADVANCE_CREDIT',
+  ADVANCE_RECOVERY = 'ADVANCE_RECOVERY',
 }
