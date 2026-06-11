@@ -1,5 +1,13 @@
 # PayDuka — Environment & Infrastructure Specification
 
+Version: 1.1
+Last Updated: 2026-06-06
+
+> Status: the Local environment is real and runs from `infra/docker-compose.yml`.
+> The AWS production architecture, cost estimate, and alarms below are the target
+> production design, not yet provisioned. The committed local compose runs
+> PostgreSQL and Redis only (the MailHog service shown is illustrative).
+
 ---
 
 ## Environments

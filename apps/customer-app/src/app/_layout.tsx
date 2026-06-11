@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { Platform } from "react-native";
 import { Slot } from "expo-router";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useAuthStore } from "@/stores/auth";
 import { BiometricGate } from "@/components/BiometricGate";
@@ -10,7 +11,19 @@ import { ws } from "@/lib/ws";
 import { useWalletStore } from "@/stores/wallet";
 import { useTransactionStore } from "@/stores/transactions";
 import { useRemittanceStore } from "@/stores/remittance";
-import "../../global.css";
+
+// Inject global styles on web
+if (Platform.OS === "web" && typeof document !== "undefined") {
+  const style = document.createElement("style");
+  style.textContent = `
+    html, body, #root {
+      height: 100%; margin: 0; padding: 0;
+      background-color: #0A0A08;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 type AuthScreen = "LOADING" | "BIOMETRIC" | "PIN" | "REGISTER" | "READY";
 
@@ -18,7 +31,6 @@ export default function RootLayout() {
   const { accessToken, customer, isLoading, restoreSession } = useAuthStore();
   const [screen, setScreen] = useState<AuthScreen>("LOADING");
 
-  // 1. Restore session
   useEffect(() => {
     restoreSession().then((hasBio) => {
       if (hasBio) setScreen("BIOMETRIC");
@@ -26,7 +38,6 @@ export default function RootLayout() {
     });
   }, []);
 
-  // 2. Once authenticated, load data + connect WS
   useEffect(() => {
     if (accessToken && customer) {
       ws.connect(customer.id);
@@ -35,10 +46,9 @@ export default function RootLayout() {
       useRemittanceStore.getState().fetch();
       setScreen("READY");
     }
-    return () => ws.disconnect();
+    return () => { ws.disconnect(); };
   }, [accessToken, customer]);
 
-  // 3. Real-time events
   useEffect(() => {
     if (!accessToken) return;
     const unsub = ws.subscribe((event, data: any) => {
@@ -56,14 +66,14 @@ export default function RootLayout() {
         useWalletStore.getState().setBalance(data.walletAvailable);
       }
     });
-    return unsub;
+    return () => { unsub(); };
   }, [accessToken]);
 
-  const onAuthSuccess = () => {}; // useEffect above handles the transition
+  const onAuthSuccess = () => {};
 
   if (screen === "LOADING" || isLoading) {
     return (
-      <View className="flex-1 bg-bg items-center justify-center">
+      <View style={styles.center}>
         <ActivityIndicator color="#C8A85C" size="large" />
         <StatusBar style="light" />
       </View>
@@ -73,10 +83,7 @@ export default function RootLayout() {
   if (screen === "BIOMETRIC") {
     return (
       <>
-        <BiometricGate
-          onSuccess={onAuthSuccess}
-          onFallbackPin={() => setScreen("PIN")}
-        />
+        <BiometricGate onSuccess={onAuthSuccess} onFallbackPin={() => setScreen("PIN")} />
         <StatusBar style="light" />
       </>
     );
@@ -85,10 +92,7 @@ export default function RootLayout() {
   if (screen === "REGISTER") {
     return (
       <>
-        <RegisterScreen
-          onSuccess={onAuthSuccess}
-          onBackToLogin={() => setScreen("PIN")}
-        />
+        <RegisterScreen onSuccess={onAuthSuccess} onBackToLogin={() => setScreen("PIN")} />
         <StatusBar style="light" />
       </>
     );
@@ -97,10 +101,7 @@ export default function RootLayout() {
   if (screen === "PIN") {
     return (
       <>
-        <PinLogin
-          onSuccess={onAuthSuccess}
-          onRegister={() => setScreen("REGISTER")}
-        />
+        <PinLogin onSuccess={onAuthSuccess} onRegister={() => setScreen("REGISTER")} />
         <StatusBar style="light" />
       </>
     );
@@ -113,3 +114,12 @@ export default function RootLayout() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  center: {
+    flex: 1,
+    backgroundColor: "#0A0A08",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

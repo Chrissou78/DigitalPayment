@@ -59,7 +59,9 @@ export default function RootLayout() {
         );
       }
     });
-    return unsub;
+    return () => {
+      unsub();
+    };
   }, [accessToken]);
 
   // Loading state

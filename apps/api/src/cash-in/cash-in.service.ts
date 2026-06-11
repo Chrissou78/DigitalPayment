@@ -1,17 +1,12 @@
-
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import {
-  CashInStatus, LedgerEntryType, LedgerReferenceType, KycTier,
-  CASH_IN_FEE_TIERS, KYC_LIMITS, CashInFeeTier,
-} from '@payduka/shared';
-
-import { CashIn } from './entities/cash-in.entity';
-import { CreateCashInDto } from './dto/create-cash-in.dto';
-import { WalletService } from '../wallet/wallet.service';
-import { Wallet } from '../wallet/entities/wallet.entity';
+import { Injectable, BadRequestException, Logger } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, DataSource } from "typeorm";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { CashIn } from "./entities/cash-in.entity";
+import { WalletService } from "../wallet/wallet.service";
+import { CreateCashInDto } from "./dto/create-cash-in.dto";
+import { ConfigService } from "@nestjs/config";
+import { LedgerEntryType, LedgerReferenceType } from "@payduka/shared";
 
 @Injectable()
 export class CashInService {
@@ -20,206 +15,100 @@ export class CashInService {
   constructor(
     @InjectRepository(CashIn)
     private readonly cashInRepo: Repository<CashIn>,
-    private readonly dataSource: DataSource,
     private readonly walletService: WalletService,
-    private readonly emitter: EventEmitter2,
+    private readonly dataSource: DataSource,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly configService: ConfigService,
   ) {}
 
-  private findFeeTier(amount: number): CashInFeeTier {
-    const tier = CASH_IN_FEE_TIERS.find(
-      (t) => amount >= t.minAmount && amount <= t.maxAmount,
-    );
-    if (!tier) {
-      throw new BadRequestException(
-        `Amount R${(amount / 100).toFixed(2)} outside supported range`,
-      );
-    }
-    return tier;
-  }
+  async initiate(merchantId: string, dto: CreateCashInDto) {
+    const feePercent = 0.02;
+    const commissionPercent = 0.01;
+    const protocolPercent = 0.005;
 
-  private async checkKycLimits(
-    customerWalletId: string,
-    amount: number,
-    kycTier: KycTier,
-  ): Promise<void> {
-    const limits = KYC_LIMITS[kycTier];
-
-    // Check daily total
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const dailyTotal = await this.cashInRepo
-      .createQueryBuilder('ci')
-      .select('COALESCE(SUM(ci.depositAmount), 0)', 'total')
-      .where('ci.customerWalletId = :walletId', { walletId: customerWalletId })
-      .andWhere('ci.status IN (:...statuses)', {
-        statuses: [CashInStatus.COMPLETED, CashInStatus.CONFIRMED, CashInStatus.PENDING],
-      })
-      .andWhere('ci.createdAt >= :today', { today })
-      .getRawOne();
-
-    if (Number(dailyTotal.total) + amount > limits.dailyLimit) {
-      throw new BadRequestException(
-        `Daily cash-in limit exceeded for ${kycTier}. ` +
-        `Limit: R${(limits.dailyLimit / 100).toFixed(2)}, ` +
-        `Used: R${(Number(dailyTotal.total) / 100).toFixed(2)}`,
-      );
-    }
-
-    // Check monthly total
-    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    const monthlyTotal = await this.cashInRepo
-      .createQueryBuilder('ci')
-      .select('COALESCE(SUM(ci.depositAmount), 0)', 'total')
-      .where('ci.customerWalletId = :walletId', { walletId: customerWalletId })
-      .andWhere('ci.status IN (:...statuses)', {
-        statuses: [CashInStatus.COMPLETED, CashInStatus.CONFIRMED, CashInStatus.PENDING],
-      })
-      .andWhere('ci.createdAt >= :monthStart', { monthStart })
-      .getRawOne();
-
-    if (Number(monthlyTotal.total) + amount > limits.monthlyLimit) {
-      throw new BadRequestException(
-        `Monthly cash-in limit exceeded for ${kycTier}. ` +
-        `Limit: R${(limits.monthlyLimit / 100).toFixed(2)}`,
-      );
-    }
-  }
-
-  async initiate(
-    agentMerchantId: string,
-    agentWalletId: string,
-    dto: CreateCashInDto,
-  ): Promise<CashIn> {
-    // 1. Resolve customer wallet
-    // In production: lookup by phone → wallet mapping
-    // For now: assume customerIdentifier is walletId
-    const customerWalletId = dto.customerIdentifier;
-
-    // 2. Validate fee tier
-    const tier = this.findFeeTier(dto.amount);
-
-    // 3. Check KYC limits (default TIER_0 for now)
-    await this.checkKycLimits(customerWalletId, dto.amount, KycTier.TIER_0);
-
-    // 4. Check agent has sufficient float
-    const agentBalance = await this.walletService.getBalance(agentWalletId);
-    if (agentBalance.available < dto.amount) {
-      throw new BadRequestException(
-        `Insufficient agent float. Available: R${(agentBalance.available / 100).toFixed(2)}, ` +
-        `Required: R${(dto.amount / 100).toFixed(2)}`,
-      );
-    }
-
-    // 5. Generate confirmation code
-    const confirmationCode = Math.random().toString().slice(2, 8);
-
-    // 6. Create cash-in record
-    const netCredit = dto.amount - tier.customerFee;
+    const customerFee = Math.round(dto.amount * feePercent);
+    const merchantCommission = Math.round(dto.amount * commissionPercent);
+    const protocolFee = Math.round(dto.amount * protocolPercent);
+    const netCredit = dto.amount - customerFee;
 
     const cashIn = this.cashInRepo.create({
-      agentMerchantId,
-      agentWalletId,
-      customerWalletId,
+      merchantId,
       customerPhone: dto.customerIdentifier,
-      depositAmount: dto.amount,
-      customerFee: tier.customerFee,
-      merchantCommission: tier.merchantCommission,
-      protocolFee: tier.protocolFee,
-      netCreditAmount: netCredit,
-      status: CashInStatus.PENDING,
-      confirmationCode,
-      metadata: dto.metadata,
+      amount: dto.amount,
+      customerFee,
+      merchantCommission,
+      protocolFee,
     });
 
     const saved = await this.cashInRepo.save(cashIn);
 
-    // TODO: Send SMS with confirmation code to customer phone
-
     this.logger.log(
       `Cash-in ${saved.id} initiated: R${(dto.amount / 100).toFixed(2)} ` +
-      `at merchant ${agentMerchantId}, code=${confirmationCode}`,
+      `from ${dto.customerIdentifier} via merchant ${merchantId}`,
     );
 
     return saved;
   }
 
-  async confirm(cashInId: string, confirmationCode: string): Promise<CashIn> {
+  async confirm(cashInId: string) {
     const cashIn = await this.cashInRepo.findOneOrFail({ where: { id: cashInId } });
 
-    if (cashIn.status !== CashInStatus.PENDING) {
-      throw new BadRequestException(`Cash-in ${cashInId} is not in PENDING state`);
+    if (cashIn.status !== "INITIATED") {
+      throw new BadRequestException("Cash-in is not in INITIATED status");
     }
 
-    if (cashIn.confirmationCode !== confirmationCode) {
-      throw new BadRequestException('Invalid confirmation code');
-    }
-
-    // Execute the atomic ledger operations
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
-    await queryRunner.startTransaction('SERIALIZABLE');
+    await queryRunner.startTransaction("SERIALIZABLE");
 
     try {
-      // 1. Debit agent wallet (they gave out their float as cash credit)
+      // Look up wallets
+      const merchantWallet = await this.walletService.findByMerchantId(cashIn.merchantId);
+      const customerWallet = await this.walletService.findByPhone(cashIn.customerPhone);
+
+      const netCredit = cashIn.amount - cashIn.customerFee;
+
+      // Debit merchant float
       await this.walletService.debit(
-        queryRunner,
-        cashIn.agentWalletId,
-        cashIn.depositAmount,
-        LedgerEntryType.DEBIT,
-        LedgerReferenceType.CASH_IN,
-        cashIn.id,
-        `Cash-in float debit: R${(cashIn.depositAmount / 100).toFixed(2)}`,
+        queryRunner, merchantWallet.id, cashIn.amount,
+        LedgerEntryType.DEBIT, LedgerReferenceType.CASH_IN, cashIn.id,
+        `Cash-in float debit: R${(cashIn.amount / 100).toFixed(2)}`,
       );
 
-      // 2. Credit customer wallet with net amount
+      // Credit customer wallet
       await this.walletService.credit(
-        queryRunner,
-        cashIn.customerWalletId,
-        cashIn.netCreditAmount,
-        LedgerEntryType.CREDIT,
-        LedgerReferenceType.CASH_IN,
-        cashIn.id,
-        `Cash deposit: R${(cashIn.netCreditAmount / 100).toFixed(2)}`,
+        queryRunner, customerWallet.id, netCredit,
+        LedgerEntryType.CREDIT, LedgerReferenceType.CASH_IN, cashIn.id,
+        `Cash deposit: R${(netCredit / 100).toFixed(2)}`,
       );
 
-      // 3. Credit agent commission
+      // Credit merchant commission
       await this.walletService.credit(
-        queryRunner,
-        cashIn.agentWalletId,
-        cashIn.merchantCommission,
-        LedgerEntryType.CREDIT,
-        LedgerReferenceType.COMMISSION,
-        cashIn.id,
+        queryRunner, merchantWallet.id, cashIn.merchantCommission,
+        LedgerEntryType.CREDIT, LedgerReferenceType.COMMISSION, cashIn.id,
         `Cash-in commission: R${(cashIn.merchantCommission / 100).toFixed(2)}`,
       );
 
-      // 4. Protocol fee is retained (already deducted from customer net credit)
-      // In production: credit to PayDuka revenue wallet
-
-      // 5. Update status
-      cashIn.status = CashInStatus.COMPLETED;
+      // Update status
+      cashIn.status = "COMPLETED";
       await queryRunner.manager.save(cashIn);
 
       await queryRunner.commitTransaction();
 
       this.logger.log(
-        `Cash-in ${cashIn.id} completed. Customer credited R${(cashIn.netCreditAmount / 100).toFixed(2)}, ` +
-        `agent commission R${(cashIn.merchantCommission / 100).toFixed(2)}`,
+        `Cash-in ${cashIn.id} completed. Customer credited R${(netCredit / 100).toFixed(2)}`,
       );
 
-      // 6. Emit event for notifications + refill check
-      this.emitter.emit('cashin.completed', {
+      this.eventEmitter.emit("cashin.completed", {
         cashInId: cashIn.id,
-        agentWalletId: cashIn.agentWalletId,
-        customerWalletId: cashIn.customerWalletId,
-        amount: cashIn.depositAmount,
+        merchantId: cashIn.merchantId,
+        customerPhone: cashIn.customerPhone,
+        amount: cashIn.amount,
       });
 
       return cashIn;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      this.logger.error(`Cash-in ${cashInId} failed: ${error.message}`);
       throw error;
     } finally {
       await queryRunner.release();

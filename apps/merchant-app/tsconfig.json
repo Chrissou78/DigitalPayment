@@ -14,6 +14,7 @@
     "app.config.ts",
     "nativewind-env.d.ts",
     "**/*.ts",
-    "**/*.tsx"
+    "**/*.tsx",
+    "react-native-qrcode-svg.d.ts"
   ]
 }

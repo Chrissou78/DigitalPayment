@@ -1,43 +1,46 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn, Index, OneToMany,
-} from 'typeorm';
-import { LedgerEntry } from './ledger-entry.entity';
-import { WalletStatus } from '../../common/enums/wallet-status.enum';
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from "typeorm";
+import { LedgerEntry } from "./ledger-entry.entity";
+import { bigintTransformer } from "../../common/transformers/bigint.transformer";
 
-@Entity('wallets')
-@Index(['ownerId', 'ownerType'], { unique: true })
+@Entity("wallets")
 export class Wallet {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn("uuid")
+  id!: string;
 
-  @Column({ type: 'uuid' })
-  ownerId: string; // merchantId or customerId
+  @Column("uuid")
+  ownerId!: string;
 
-  @Column({ type: 'varchar', length: 20 })
-  ownerType: 'MERCHANT' | 'CUSTOMER';
+  @Column({ type: "enum", enum: ["MERCHANT", "CUSTOMER"] })
+  ownerType!: "MERCHANT" | "CUSTOMER";
 
-  @Column({ type: 'bigint', default: 0 })
-  available: number; // ZAR cents
+  @Column({ type: "bigint", default: 0, transformer: bigintTransformer })
+  available!: number;
 
-  @Column({ type: 'bigint', default: 0 })
-  reserved: number; // ZAR cents
+  @Column({ type: "bigint", default: 0, transformer: bigintTransformer })
+  reserved!: number;
 
-  @Column({ type: 'bigint', default: 0 })
-  staked: number; // ZAR cents
+  @Column({ type: "bigint", default: 0, transformer: bigintTransformer })
+  staked!: number;
 
-  @Column({ type: 'varchar', length: 3, default: 'ZAR' })
-  currency: string;
+  @Column({ length: 3, default: "ZAR" })
+  currency!: string;
 
-  @Column({ type: 'enum', enum: WalletStatus, default: WalletStatus.ACTIVE })
-  status: string;
+  @Column({ type: "enum", enum: ["ACTIVE", "FROZEN", "CLOSED"], default: "ACTIVE" })
+  status!: string;
 
   @OneToMany(() => LedgerEntry, (entry) => entry.wallet)
-  ledgerEntries?: LedgerEntry[];
+  ledgerEntries!: LedgerEntry[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

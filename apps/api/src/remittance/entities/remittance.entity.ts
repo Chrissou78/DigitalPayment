@@ -1,77 +1,58 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn,
-} from 'typeorm';
-import { RemittanceStatus } from '@payduka/shared';
+} from "typeorm";
+import { bigintTransformer } from "../../common/transformers/bigint.transformer";
 
-@Entity('remittances')
+@Entity("remittances")
 export class Remittance {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  // Sender side
-  @Column('uuid')
-  senderMerchantId!: string; // merchant where sender deposited cash
+  @Column({ unique: true, length: 20 })
+  trackingCode!: string;
 
-  @Column('uuid')
-  senderMerchantWalletId!: string;
-
-  @Column({ nullable: true })
+  @Column()
   senderPhone!: string;
 
-  @Column({ nullable: true })
-  senderName!: string;
+  @Column("uuid", { nullable: true })
+  senderId!: string;
 
-  // Recipient side
   @Column()
   recipientPhone!: string;
 
-  @Column({ nullable: true })
-  recipientName!: string;
+  @Column("uuid", { nullable: true })
+  recipientId!: string;
 
-  @Column('uuid', { nullable: true })
-  recipientWalletId!: string;
+  @Column("uuid", { nullable: true })
+  sendMerchantId!: string;
 
-  @Column('uuid', { nullable: true })
-  collectingMerchantId!: string; // merchant where recipient collects
+  @Column("uuid", { nullable: true })
+  collectMerchantId!: string;
 
-  @Column('uuid', { nullable: true })
-  collectingMerchantWalletId!: string;
+  @Column({ type: "bigint", transformer: bigintTransformer })
+  amount!: number;
 
-  // Amounts
-  @Column({ type: 'bigint' })
-  sendAmount!: number; // cents — cash handed in by sender
-
-  @Column({ type: 'bigint' })
+  @Column({ type: "bigint", default: 0, transformer: bigintTransformer })
   senderFee!: number;
 
-  @Column({ type: 'bigint' })
-  sendingMerchantCommission!: number;
+  @Column({ type: "bigint", default: 0, transformer: bigintTransformer })
+  sendMerchantCommission!: number;
 
-  @Column({ type: 'bigint' })
-  receivingMerchantCommission!: number;
+  @Column({ type: "bigint", default: 0, transformer: bigintTransformer })
+  collectMerchantCommission!: number;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: "bigint", default: 0, transformer: bigintTransformer })
   protocolFee!: number;
 
-  @Column({ type: 'bigint' })
-  recipientAmount!: number; // what recipient actually gets
+  @Column({ type: "enum", enum: ["ESCROWED", "COLLECTED", "EXPIRED", "CANCELLED", "FAILED"], default: "ESCROWED" })
+  status!: string;
 
-  // Collection
-  @Column({ length: 8 })
-  collectionCode!: string; // unique code for recipient to collect
+  @Column({ type: "timestamptz", nullable: true })
+  expiresAt!: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
-  expiresAt!: Date; // collection code expiry (72 hours)
-
-  @Column({ type: 'enum', enum: RemittanceStatus, default: RemittanceStatus.INITIATED })
-  status!: RemittanceStatus;
-
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamptz", nullable: true })
   collectedAt!: Date;
-
-  @Column({ type: 'jsonb', nullable: true })
-  metadata!: Record<string, any>;
 
   @CreateDateColumn()
   createdAt!: Date;

@@ -1,13 +1,20 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* apps/admin-dashboard/src/app/globals.css */
+@import "tailwindcss";
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap");
+/* PayDuka custom theme */
+@theme {
+  --color-bg: #0A0A0F;
+  --color-surface: #16161F;
+  --color-surface-2: #1E1E2A;
+  --color-ink: #E8E8ED;
+  --color-ink-muted: #8A8A9A;
+  --color-gold: #D4A843;
+  --color-gold-dim: #3D2E10;
+  --color-green: #2ECC71;
+  --color-red: #E74C3C;
+  --color-blue: #3498DB;
 
-html {
-  color-scheme: dark;
-}
-
-body {
-  @apply bg-bg text-ink font-sans;
+  --font-heading: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-sans: "Inter", sans-serif;
 }

@@ -4,7 +4,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, IsNull } from "typeorm";
 import { ethers } from "ethers";
 import { ConfigService } from "@nestjs/config";
-import { Transaction } from "../transaction/transaction.entity";
+import { Transaction } from "../transaction/entities/transaction.entity";
+import { TransactionStatus } from "../common/enums/transaction-status.enum";
 
 const POOL_ABI = [
   "function batchSettle(uint256 totalVolumeZarCents, bytes32 offChainBatchId) external",
@@ -43,12 +44,12 @@ const STAKING_ABI = [
 @Injectable()
 export class SettlementBridgeService {
   private readonly logger = new Logger(SettlementBridgeService.name);
-  private provider: ethers.JsonRpcProvider;
-  private wallet: ethers.Wallet;
-  private pool: ethers.Contract;
-  private oracle: ethers.Contract;
-  private treasury: ethers.Contract;
-  private staking: ethers.Contract;
+  private provider!: ethers.JsonRpcProvider;
+  private signer!: ethers.Wallet;
+  private pool!: ethers.Contract;
+  private oracle!: ethers.Contract;
+  private treasury!: ethers.Contract;
+  private staking!: ethers.Contract;
 
   constructor(
     @InjectRepository(Transaction)
@@ -56,41 +57,38 @@ export class SettlementBridgeService {
     private readonly config: ConfigService,
   ) {
     const rpcUrl = this.config.get<string>("POLYGON_RPC_URL");
+    if (!rpcUrl) throw new Error("POLYGON_RPC_URL is not defined");
+
     const pk = this.config.get<string>("SETTLEMENT_PRIVATE_KEY");
+    if (!pk) throw new Error("SETTLEMENT_PRIVATE_KEY is not defined");
+
+    const poolAddress = this.config.get<string>("PDUKA_POOL_ADDRESS");
+    if (!poolAddress) throw new Error("PDUKA_POOL_ADDRESS is not defined");
+
+    const oracleAddress = this.config.get<string>("PDUKA_ORACLE_ADDRESS");
+    if (!oracleAddress) throw new Error("PDUKA_ORACLE_ADDRESS is not defined");
+
+    const treasuryAddress = this.config.get<string>("PDUKA_TREASURY_ADDRESS");
+    if (!treasuryAddress) throw new Error("PDUKA_TREASURY_ADDRESS is not defined");
+
+    const stakingAddress = this.config.get<string>("STAKING_POOL_ADDRESS");
+    if (!stakingAddress) throw new Error("STAKING_POOL_ADDRESS is not defined");
 
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
-    this.wallet = new ethers.Wallet(pk, this.provider);
+    this.signer = new ethers.Wallet(pk, this.provider);
 
-    this.pool = new ethers.Contract(
-      this.config.get("PDUKA_POOL_ADDRESS"),
-      POOL_ABI,
-      this.wallet,
-    );
-    this.oracle = new ethers.Contract(
-      this.config.get("PDUKA_ORACLE_ADDRESS"),
-      ORACLE_ABI,
-      this.wallet,
-    );
-    this.treasury = new ethers.Contract(
-      this.config.get("PDUKA_TREASURY_ADDRESS"),
-      TREASURY_ABI,
-      this.provider, // read-only
-    );
-    this.staking = new ethers.Contract(
-      this.config.get("STAKING_POOL_ADDRESS"),
-      STAKING_ABI,
-      this.provider,
-    );
+    this.pool = new ethers.Contract(poolAddress, POOL_ABI, this.signer);
+    this.oracle = new ethers.Contract(oracleAddress, ORACLE_ABI, this.signer);
+    this.treasury = new ethers.Contract(treasuryAddress, TREASURY_ABI, this.signer);
+    this.staking = new ethers.Contract(stakingAddress, STAKING_ABI, this.signer);
   }
-
-  // ── Batch Settlement (every hour) ──
 
   @Cron(CronExpression.EVERY_HOUR)
   async settleBatch() {
     this.logger.log("Starting batch settlement...");
 
     const unsettled = await this.txnRepo.find({
-      where: { status: "COMPLETED", onChainBatchId: IsNull() },
+      where: { status: TransactionStatus.COMPLETED, onChainBatchId: IsNull() as any },
     });
 
     if (unsettled.length === 0) {
@@ -98,7 +96,6 @@ export class SettlementBridgeService {
       return;
     }
 
-    // Sum all transaction amounts (ZAR cents)
     const totalVolumeZarCents = unsettled.reduce(
       (sum, tx) => sum + tx.amount,
       0,
@@ -109,13 +106,11 @@ export class SettlementBridgeService {
     );
 
     try {
-      // Contract reads oracle internally, does conversion + burn + treasury
       const tx = await this.pool.batchSettle(totalVolumeZarCents, batchId);
       this.logger.log(`Batch tx: ${tx.hash}`);
       const receipt = await tx.wait();
       this.logger.log(`Confirmed block ${receipt.blockNumber}`);
 
-      // Mark settled
       const ids = unsettled.map((t) => t.id);
       await this.txnRepo
         .createQueryBuilder()
@@ -124,7 +119,7 @@ export class SettlementBridgeService {
           onChainBatchId: batchId,
           onChainTxHash: tx.hash,
           settledOnChainAt: new Date(),
-        })
+        } as any)
         .whereInIds(ids)
         .execute();
 
@@ -136,12 +131,9 @@ export class SettlementBridgeService {
     }
   }
 
-  // ── Oracle Rate Updates (every 15 min) ──
-
   @Cron(CronExpression.EVERY_10_MINUTES)
   async updateOracleRates() {
     try {
-      // Fetch USD/ZAR from external API
       const fxRes = await fetch(
         "https://api.exchangerate-api.com/v4/latest/USD",
       );
@@ -153,19 +145,13 @@ export class SettlementBridgeService {
         return;
       }
 
-      // Convert to 18 decimals
       const usdZarWei = ethers.parseEther(usdZar.toString());
-
-      // Update on-chain
       const tx = await this.oracle.setUsdZar(usdZarWei);
       await tx.wait();
       this.logger.log(`Oracle USD/ZAR updated: ${usdZar}`);
 
-      // PDUKA/USD rate: during pre-listing, set from config (ICO price).
-      // Post-listing, fetch from QuickSwap TWAP or DEX aggregator.
       const pdukaUsd = this.config.get<number>("PDUKA_USD_RATE") ?? 0.005;
       const pdukaUsdWei = ethers.parseEther(pdukaUsd.toString());
-
       const tx2 = await this.oracle.setPdukaUsd(pdukaUsdWei);
       await tx2.wait();
       this.logger.log(`Oracle PDUKA/USD updated: ${pdukaUsd}`);
@@ -173,8 +159,6 @@ export class SettlementBridgeService {
       this.logger.error("Oracle update failed", err);
     }
   }
-
-  // ── Merchant Off-Ramp ──
 
   async withdrawForMerchant(
     merchantWalletAddress: string,
@@ -186,8 +170,6 @@ export class SettlementBridgeService {
     const receipt = await tx.wait();
     return receipt.hash;
   }
-
-  // ── Read-Only: On-Chain Stats (for admin dashboard) ──
 
   async getOnChainStats() {
     const [
@@ -224,7 +206,6 @@ export class SettlementBridgeService {
       this.staking.apyBps(),
     ]);
 
-    // Get vault details
     const vaults = [];
     for (let i = 0; i < Number(vaultCount); i++) {
       const [addr, balance, capacity] = await this.treasury.getVaultInfo(i);

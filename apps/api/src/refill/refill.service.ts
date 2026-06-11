@@ -119,8 +119,8 @@ export class RefillService {
 
       // 6. Update to PENDING_PAYMENT
       saved.status = RefillStatus.PENDING_PAYMENT;
-      saved.externalPaymentId = payment.id;
-      saved.externalPaymentUrl = payment.url;
+      saved.paymentId = payment.id;
+      saved.paymentUrl = payment.url;
       await this.refillRepo.save(saved);
 
       this.logger.log(
@@ -130,7 +130,8 @@ export class RefillService {
 
       return saved;
     } catch (error) {
-      this.logger.error(`Refill failed for wallet ${walletId}: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Refill failed for wallet ${walletId}: ${message}`);
 
       // Mark as failed if record was created
       const failed = await this.refillRepo.findOne({
@@ -150,7 +151,7 @@ export class RefillService {
 
   async completeRefill(externalPaymentId: string): Promise<void> {
     const refill = await this.refillRepo.findOne({
-      where: { externalPaymentId, status: RefillStatus.PENDING_PAYMENT },
+      where: { paymentId: externalPaymentId, status: "PENDING_PAYMENT" },
     });
 
     if (!refill) {
@@ -175,8 +176,7 @@ export class RefillService {
       );
 
       // 10. Mark completed
-      refill.status = RefillStatus.COMPLETED;
-      refill.completedAt = new Date();
+      refill.status = "COMPLETED";
       await queryRunner.manager.save(refill);
 
       await queryRunner.commitTransaction();

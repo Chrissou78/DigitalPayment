@@ -2,8 +2,8 @@ import { IsUUID, IsString } from 'class-validator';
 
 export class ConfirmCashInDto {
   @IsUUID()
-  cashInId: string;
+  cashInId!: string;
 
   @IsString()
-  confirmationCode: string;
+  confirmationCode!: string;
 }

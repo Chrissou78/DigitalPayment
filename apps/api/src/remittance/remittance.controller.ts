@@ -39,7 +39,7 @@ export class RemittanceController {
     const r = await this.remittanceService.findByCollectionCode(code);
     return {
       status: r.status,
-      amount: r.recipientAmount,
+      amount: r.amount - r.senderFee,
       expiresAt: r.expiresAt,
       collectedAt: r.collectedAt,
     };

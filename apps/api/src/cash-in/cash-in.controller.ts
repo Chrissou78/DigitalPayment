@@ -18,16 +18,11 @@ export class CashInController {
 
   @Post()
   async initiate(@Body() dto: CreateCashInDto, @Req() req: RequestWithUser) {
-    return this.cashInService.initiate(
-      req.user.merchantId,
-      req.user.walletId,
-      dto,
-    );
+    return this.cashInService.initiate(req.user.merchantId, dto);
   }
 
   @Post('confirm')
-  @HttpCode(HttpStatus.OK)
   async confirm(@Body() dto: ConfirmCashInDto) {
-    return this.cashInService.confirm(dto.cashInId, dto.confirmationCode);
+    return this.cashInService.confirm(dto.cashInId);
   }
 }

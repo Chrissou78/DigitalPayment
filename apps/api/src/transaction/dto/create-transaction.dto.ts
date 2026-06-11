@@ -1,36 +1,33 @@
-import {
-  IsEnum,
-  IsInt,
-  IsPositive,
-  IsUUID,
-  IsOptional,
-  IsString,
-} from "class-validator";
-import { TransactionType } from "../../common/enums/transaction-type.enum";
+import { IsIn, IsUUID, IsInt, Min, IsOptional, IsString, IsObject } from "class-validator";
 
 export class CreateTransactionDto {
-  @IsEnum(TransactionType)
-  type!: TransactionType;
+  @IsIn([
+    "PAYMENT", "CASH_IN", "CASH_OUT", "REMITTANCE_SEND",
+    "REMITTANCE_COLLECT", "ADVANCE", "REFILL", "STAKING_REWARD",
+    "WITHDRAWAL", "FEE",
+  ])
+  type!: string;
 
   @IsUUID()
   merchantId!: string;
 
+  @IsUUID()
+  @IsOptional()
+  customerId?: string;
+
   @IsInt()
-  @IsPositive()
+  @Min(1)
   amount!: number;
 
-  @IsOptional()
   @IsString()
-  qrPayload?: string;
-
   @IsOptional()
+  customerRef?: string;
+
   @IsString()
-  cardToken?: string;
-
   @IsOptional()
-  @IsUUID()
-  customerWalletId?: string;
+  merchantRef?: string;
 
+  @IsObject()
   @IsOptional()
   metadata?: Record<string, any>;
 }

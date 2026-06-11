@@ -1,7 +1,7 @@
-# PayDuka — System Architecture v3.0
+# PayDuka — System Architecture v3.1
 
 > Built for Africa, Powered by Polygon
-> Last updated: 2026-06-05
+> Last updated: 2026-06-06
 
 ---
 
@@ -19,78 +19,55 @@ off-chain for speed, cost, and simplicity.
 
 ## 2. System Layers
 
-╔══════════════════════════════════════════════════════════════════╗
-║                      PRESENTATION LAYER                         ║
-║                                                                  ║
-║   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐        ║
-║   │ Customer App  │   │ Merchant PoS │   │    Admin     │        ║
-║   │ React Native  │   │ React Native │   │   Next.js    │        ║
-║   │  (Expo 56)    │   │  (Expo 56)   │   │    15.x      │        ║
-║   └──────┬───────┘   └──────┬───────┘   └──────┬───────┘        ║
-║          │                  │                   │                 ║
-║          │    Users see ZAR only.               │                 ║
-║          │    No wallets, no gas, no tokens.    │                 ║
-╚══════════╪══════════════════╪═══════════════════╪════════════════╝
-           │                  │                   │
-           │         REST API + WebSocket         │
-           └──────────────────┼───────────────────┘
-                              │
-                              ▼
-╔══════════════════════════════════════════════════════════════════╗
-║                        ENGINE LAYER                              ║
-║                                                                  ║
-║                    NestJS 11  (apps/api/)                         ║
-║                                                                  ║
-║   ┌────────────────┐  ┌─────────────┐  ┌──────────────────┐     ║
-║   │  PostgreSQL    │  │    Redis     │  │     BullMQ       │     ║
-║   │  (Supabase)    │  │   7-alpine   │  │                  │     ║
-║   │                │  │              │  │  • refill jobs    │     ║
-║   │ • ledger       │  │ • locks      │  │  • settlement    │     ║
-║   │ • wallets      │  │ • cache      │  │    batch jobs    │     ║
-║   │ • transactions │  │ • sessions   │  │  • notification  │     ║
-║   │ • KYC          │  │ • pub/sub    │  │    dispatch      │     ║
-║   │ • staking      │  │              │  │                  │     ║
-║   │ • advances     │  │              │  │                  │     ║
-║   │ • fraud alerts │  │              │  │                  │     ║
-║   └────────────────┘  └─────────────┘  └──────────────────┘     ║
-║                                                                  ║
-║   Source of truth for ALL balances and transactions.             ║
-║   Payments, cash-ins, remittances, staking = instant DB ops.    ║
-║   No gas fees. No chain interaction for daily operations.        ║
-╚══════════════════════╦═══════════════════════════════════════════╝
-                       ║
-                       ║  Hourly batch settlement
-                       ║  10-min oracle rate sync
-                       ║  On-demand withdrawals
-                       ▼
-╔══════════════════════════════════════════════════════════════════╗
-║                   BLOCKCHAIN LAYER  (Polygon PoS)                ║
-║                                                                  ║
-║   ┌────────────────┐  ┌────────────────┐  ┌────────────────┐    ║
-║   │  PDukaToken    │  │   PDukaPool    │  │  PDukaOracle   │    ║
-║   │                │  │                │  │                │    ║
-║   │  ERC-20        │  │  Custody pool  │  │  PDUKA/USD     │    ║
-║   │  21B supply    │  │  Deposit       │  │  USD/ZAR       │    ║
-║   │  Burnable      │  │  BatchSettle   │  │  → PDUKA/ZAR   │    ║
-║   │                │  │  Withdraw      │  │  1h staleness  │    ║
-║   └────────────────┘  └────────────────┘  └────────────────┘    ║
-║                                                                  ║
-║   ┌────────────────┐  ┌────────────────┐                         ║
-║   │ PDukaTreasury  │  │  StakingPool   │                         ║
-║   │                │  │                │                         ║
-║   │  Multi-vault   │  │  8–15% APY     │                         ║
-║   │  $100K cap per │  │  Stake/Unstake │                         ║
-║   │  vault         │  │  ClaimRewards  │                         ║
-║   │  Auto-overflow │  │  Admin-set APY │                         ║
-║   └────────────────┘  └────────────────┘                         ║
-║                                                                  ║
-║   On-chain operations:                                           ║
-║     • Batch burn ─────────── 0.5% of transaction volume          ║
-║     • Treasury skim ──────── 2.0% of transaction volume          ║
-║     • Withdrawals / off-ramp (merchant → bank or wallet)         ║
-║     • Staking deposits and reward distribution                   ║
-║   All verifiable on Polygonscan.                                 ║
-╚══════════════════════════════════════════════════════════════════╝
+┌────────────────────────────────────────────────────────────┐
+│                     PRESENTATION LAYER                     │
+│                                                            │
+│ Customer App      Merchant PoS      Admin Panel            │
+│ (React Native)    (React Native)    (Next.js)              │
+│                                                            │
+│ Users see ZAR only.                                        │
+│ No wallets.  No gas.  No tokens.                           │
+└──────────────────────────────┬─────────────────────────────┘
+                               │
+                       REST API + WebSocket
+                               ▼
+┌──────────────────────────────────────────────────────────┐
+│                        ENGINE LAYER                      │
+│                                                          │
+│                   NestJS API   (apps/api/)               │
+│  ┌───────────────────────────────────────────────────┐   │
+│  │ PostgreSQL      Redis          BullMQ             │   │
+│  │ ledger          locks          refill             │   │
+│  │ wallets         cache          settlement         │   │
+│  │ transactions                   jobs               │   │
+│  │ KYC, staking                                      │   │
+│  └───────────────────────────────────────────────────┘   │
+│                                                          │
+│ Source of truth for all balances.                        │
+│ Payments, cash-ins, remittances, staking                 │
+│ are instant DB operations.  No gas.  No chain.           │
+└──────────────────────────────┬───────────────────────────┘
+                               │
+                  Hourly batch / 10-min oracle
+                               ▼
+┌──────────────────────────────────────────────────────────┐
+│                BLOCKCHAIN LAYER  (Polygon)               │
+│                                                          │
+│ PDukaToken      PDukaPool       PDukaOracle              │
+│ (ERC-20)        (custody)       (PDUKA/ZAR rate)         │
+│                                                          │
+│ PDukaTreasury               StakingPool                  │
+│ (multi-vault,               (APY yield)                  │
+│  $100K cap / vault)                                      │
+│                                                          │
+│ On-chain operations:                                     │
+│   batch burn  (0.5% of volume)                           │
+│   treasury skim  (2%)                                    │
+│   withdrawals / off-ramp                                 │
+│   staking deposits / rewards                             │
+│                                                          │
+│ All verifiable on Polygonscan.                           │
+└──────────────────────────────────────────────────────────┘
 
 ## 3. Account Model — Virtual Accounts
 
@@ -105,6 +82,24 @@ The actual PDuka tokens backing all virtual balances sit in a
 single PDukaPool smart contract on Polygon. The pool does not know
 about individual users. It only processes aggregate operations:
 batch settlement (burn + treasury skim), deposits, and withdrawals.
+
+### The ledger: accounting primitive + business context
+
+Every balance change writes one immutable row to `ledger_entries`. Each row
+carries two independent dimensions:
+
+- **type** — the accounting primitive: DEBIT, CREDIT, RESERVE_HOLD,
+  RESERVE_RELEASE, STAKE_LOCK, STAKE_UNLOCK, STAKING_REWARD, FEE_REVENUE,
+  ADVANCE_CREDIT, ADVANCE_RECOVERY. This matches the database enum exactly.
+- **reference_type / reference_id** — the business context and the related
+  record: PAYMENT, REMITTANCE, CASH_IN, REFILL, ADVANCE, STAKING, COMMISSION,
+  FEE.
+
+Type answers "what kind of movement"; reference answers "because of what". A
+customer payment is a DEBIT (reference PAYMENT) on the customer wallet and a
+CREDIT (reference PAYMENT) on the merchant wallet, with a separate RESERVE_HOLD
+for the rolling reserve and a FEE_REVENUE for the platform fee. Both enums live
+once in `@payduka/shared`.
 
 ### Why virtual accounts, not per-user wallets?
 
@@ -202,8 +197,8 @@ Staleness threshold: 1 hour. Settlement fails if rate is stale. Rate snapshot st
 SettlementBridgeService (cron, every 10 min):
 
 Fetch USD/ZAR from exchangerate-api.com
-Call PDukaOracle.setUsdZar(rate)
-Set PDukaOracle.setPdukaUsd(rate) from config or DEX TWAP
+Call PDukaOracle.updateRates(pdukaUsd, usdZar) with the latest PDUKA/USD
+(from config or DEX TWAP) and USD/ZAR rates
 
 ---
 
@@ -251,9 +246,10 @@ rebalance when the PDUKA price changes significantly.
 |----------------|----------------------------------------|--------------------------------------|
 | PDukaToken     | ERC-20 token, 21B fixed supply         | transfer, burn                       |
 | PDukaPool      | Pooled custody for all virtual accounts| deposit, batchSettle, withdraw       |
-| PDukaOracle    | PDUKA/ZAR price feed                   | pdukaZar, zarToPduka, pdukaToZar     |
+| PDukaOracle    | PDUKA/ZAR price feed                   | pdukaToZar, pdukaAmountToZar, updateRates |
 | PDukaTreasury  | Multi-vault treasury management        | receiveFunds, disburse, rebalance    |
 | StakingPool    | Yield generation for stakers           | stake, unstake, claimRewards         |
+| SettlementRegistry | On-chain record of settlement batches | recordBatch, getBatch            |
 
 All contracts deployed on Polygon Mainnet. Addresses stored in
 environment config and queryable from the admin dashboard.
@@ -314,13 +310,14 @@ payduka/
 │   └── admin-dashboard/       # Next.js, operations console
 ├── packages/
 │   └── shared/                # Enums, interfaces, constants, fee tiers
-├── contracts/                 # Solidity (Hardhat), 5 contracts
+├── contracts/                 # Solidity (Hardhat 3), 6 contracts
 │   └── src/
 │       ├── PDukaToken.sol
 │       ├── PDukaPool.sol
 │       ├── PDukaOracle.sol
 │       ├── PDukaTreasury.sol
-│       └── StakingPool.sol
+│       ├── StakingPool.sol
+│       └── SettlementRegistry.sol
 ├── docs/
 │   ├── ARCHITECTURE.md        # This document
 │   └── diagrams/

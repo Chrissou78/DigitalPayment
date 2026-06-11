@@ -1,53 +1,37 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
+  Entity, PrimaryGeneratedColumn, Column,
+  CreateDateColumn, UpdateDateColumn,
 } from "typeorm";
-import { CashInStatus } from "@payduka/shared";
 import { bigintTransformer } from "../../common/transformers/bigint.transformer";
 
-@Entity("cash_in_transactions")
+@Entity("cash_ins")
 export class CashIn {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
   @Column("uuid")
-  agentMerchantId!: string;
+  merchantId!: string;
 
-  @Column("uuid")
-  agentWalletId!: string;
-
-  @Column("uuid")
-  customerWalletId!: string;
-
-  @Column({ nullable: true })
+  @Column()
   customerPhone!: string;
 
-  @Column({ type: "bigint", transformer: bigintTransformer })
-  depositAmount!: number;
+  @Column("uuid", { nullable: true })
+  customerId!: string;
 
   @Column({ type: "bigint", transformer: bigintTransformer })
+  amount!: number;
+
+  @Column({ type: "bigint", default: 0, transformer: bigintTransformer })
   customerFee!: number;
 
-  @Column({ type: "bigint", transformer: bigintTransformer })
+  @Column({ type: "bigint", default: 0, transformer: bigintTransformer })
   merchantCommission!: number;
 
-  @Column({ type: "bigint", transformer: bigintTransformer })
+  @Column({ type: "bigint", default: 0, transformer: bigintTransformer })
   protocolFee!: number;
 
-  @Column({ type: "bigint", transformer: bigintTransformer })
-  netCreditAmount!: number;
-
-  @Column({ type: "enum", enum: CashInStatus, default: CashInStatus.PENDING })
-  status!: CashInStatus;
-
-  @Column({ nullable: true })
-  confirmationCode!: string;
-
-  @Column({ type: "jsonb", nullable: true })
-  metadata!: Record<string, any>;
+  @Column({ type: "enum", enum: ["INITIATED", "CONFIRMED", "COMPLETED", "CANCELLED", "FAILED"], default: "INITIATED" })
+  status!: string;
 
   @CreateDateColumn()
   createdAt!: Date;

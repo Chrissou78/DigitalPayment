@@ -14,40 +14,40 @@ declare module "@nomicfoundation/hardhat-ethers/types" {
 getContractFactory(name: 'IPDukaOracle', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.IPDukaOracle__factory>
 getContractFactory(name: 'IPDukaTreasury', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.IPDukaTreasury__factory>
 getContractFactory(name: 'PDukaPool', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.PDukaPool__factory>
+getContractFactory(name: 'PDukaToken', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.PDukaToken__factory>
 getContractFactory(name: 'ITreasuryOracle', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.ITreasuryOracle__factory>
 getContractFactory(name: 'PDukaTreasury', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.PDukaTreasury__factory>
 getContractFactory(name: 'SettlementRegistry', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.SettlementRegistry__factory>
-getContractFactory(name: 'PDukaToken', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.PDukaToken__factory>
 getContractFactory(name: 'StakingPool', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.StakingPool__factory>
 
   getContractAt(name: 'PDukaOracle', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.PDukaOracle>
 getContractAt(name: 'IPDukaOracle', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.IPDukaOracle>
 getContractAt(name: 'IPDukaTreasury', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.IPDukaTreasury>
 getContractAt(name: 'PDukaPool', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.PDukaPool>
+getContractAt(name: 'PDukaToken', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.PDukaToken>
 getContractAt(name: 'ITreasuryOracle', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.ITreasuryOracle>
 getContractAt(name: 'PDukaTreasury', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.PDukaTreasury>
 getContractAt(name: 'SettlementRegistry', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.SettlementRegistry>
-getContractAt(name: 'PDukaToken', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.PDukaToken>
 getContractAt(name: 'StakingPool', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.StakingPool>
 
   deployContract(name: 'PDukaOracle', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.PDukaOracle>
 deployContract(name: 'IPDukaOracle', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.IPDukaOracle>
 deployContract(name: 'IPDukaTreasury', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.IPDukaTreasury>
 deployContract(name: 'PDukaPool', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.PDukaPool>
+deployContract(name: 'PDukaToken', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.PDukaToken>
 deployContract(name: 'ITreasuryOracle', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ITreasuryOracle>
 deployContract(name: 'PDukaTreasury', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.PDukaTreasury>
 deployContract(name: 'SettlementRegistry', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.SettlementRegistry>
-deployContract(name: 'PDukaToken', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.PDukaToken>
 deployContract(name: 'StakingPool', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.StakingPool>
 
   deployContract(name: 'PDukaOracle', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.PDukaOracle>
 deployContract(name: 'IPDukaOracle', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.IPDukaOracle>
 deployContract(name: 'IPDukaTreasury', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.IPDukaTreasury>
 deployContract(name: 'PDukaPool', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.PDukaPool>
+deployContract(name: 'PDukaToken', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.PDukaToken>
 deployContract(name: 'ITreasuryOracle', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ITreasuryOracle>
 deployContract(name: 'PDukaTreasury', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.PDukaTreasury>
 deployContract(name: 'SettlementRegistry', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.SettlementRegistry>
-deployContract(name: 'PDukaToken', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.PDukaToken>
 deployContract(name: 'StakingPool', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.StakingPool>
 
     // default types

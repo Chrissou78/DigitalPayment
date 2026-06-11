@@ -1,11 +1,7 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
+  Entity, PrimaryGeneratedColumn, Column,
+  CreateDateColumn, UpdateDateColumn,
 } from "typeorm";
-import { RefillStatus } from "../../common/enums/refill-status.enum";
 import { bigintTransformer } from "../../common/transformers/bigint.transformer";
 
 @Entity("refills")
@@ -19,17 +15,23 @@ export class Refill {
   @Column({ type: "bigint", transformer: bigintTransformer })
   amount!: number;
 
-  @Column({ type: "enum", enum: RefillStatus, default: RefillStatus.INITIATED })
-  status!: RefillStatus;
+  @Column({ type: "enum", enum: ["INITIATED", "PENDING_PAYMENT", "COMPLETED", "FAILED", "REQUIRES_MANUAL_REVIEW"], default: "INITIATED" })
+  status!: string;
 
   @Column({ nullable: true })
-  externalPaymentId!: string;
+  paymentId!: string;
+
+  @Column({ length: 500, nullable: true })
+  paymentUrl!: string;
 
   @Column({ nullable: true })
-  externalPaymentUrl!: string;
+  stitchRef!: string;
 
-  @Column({ type: "timestamp", nullable: true })
-  completedAt!: Date;
+  @Column({ type: "int", default: 0 })
+  retryCount!: number;
+
+  @Column({ length: 500, nullable: true })
+  errorMessage!: string;
 
   @CreateDateColumn()
   createdAt!: Date;

@@ -36,20 +36,34 @@ jobs:
 
       # ── Migrations ──
       - name: Run database migrations
-        run: cd apps/api && pnpm migration:run
+        run: pnpm --filter @payduka/api migration:run
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          DB_SSL: "true"
           NODE_ENV: production
 
       # ── Deploy API ──
-      - name: Build & push production Docker image
-        run: |
-          docker build -t payduka-api:${{ github.ref_name }} -f apps/api/Dockerfile .
-          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ${{ vars.REGISTRY_URL }} -u ${{ vars.REGISTRY_USER }} --password-stdin
-          docker tag payduka-api:${{ github.ref_name }} ${{ vars.REGISTRY_URL }}/payduka-api:${{ github.ref_name }}
-          docker tag payduka-api:${{ github.ref_name }} ${{ vars.REGISTRY_URL }}/payduka-api:latest
-          docker push ${{ vars.REGISTRY_URL }}/payduka-api:${{ github.ref_name }}
-          docker push ${{ vars.REGISTRY_URL }}/payduka-api:latest
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.REGISTRY_URL }}
+          username: ${{ vars.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and push production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.REGISTRY_URL }}/payduka-api:${{ github.ref_name }}
+            ${{ vars.REGISTRY_URL }}/payduka-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       # ── Deploy Admin ──
       - name: Deploy admin to Vercel (production)
@@ -60,3 +74,11 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
           vercel-args: "--prod"
           working-directory: apps/admin-dashboard
+
+      # ── Health check ──
+      - name: Health check
+        run: |
+          sleep 30
+          curl --fail --retry 5 --retry-delay 10 \
+            ${{ vars.PROD_API_URL }}/health \
+            || exit 1

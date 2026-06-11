@@ -11,7 +11,7 @@ import {
 export class StitchService {
   private readonly logger = new Logger(StitchService.name);
   private client: GraphQLClient;
-  private accessToken: string;
+  private accessToken: string = "";
   private tokenExpiry: number = 0;
 
   constructor(private readonly config: ConfigService) {

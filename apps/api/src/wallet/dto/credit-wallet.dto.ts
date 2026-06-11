@@ -1,19 +1,31 @@
-import { IsUUID, IsInt, IsPositive, IsEnum, IsOptional, IsString } from 'class-validator';
-import { LedgerEntryType } from '@payduka/shared';
+// apps/api/src/wallet/dto/credit-wallet.dto.ts
+import {
+  IsIn,
+  IsUUID,
+  IsInt,
+  IsPositive,
+  IsEnum,
+  IsOptional,
+  IsString,
+} from "class-validator";
+import { LedgerEntryType } from "@payduka/shared";
 
 export class CreditWalletDto {
   @IsUUID()
-  walletId: string;
+  walletId!: string;
 
-  @IsInt() @IsPositive()
-  amount: number; // cents
+  @IsInt()
+  @IsPositive()
+  amount!: number;
 
   @IsEnum(LedgerEntryType)
-  type: LedgerEntryType;
+  type!: LedgerEntryType;
 
-  @IsOptional() @IsUUID()
+  @IsOptional()
+  @IsUUID()
   transactionId?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   description?: string;
 }

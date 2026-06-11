@@ -1,3 +1,6 @@
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
+
+
 export default () => {
   const dbUrl = process.env.DATABASE_URL;
   const isProd = process.env.NODE_ENV === 'production';
@@ -32,7 +35,9 @@ export default () => {
     database: {
       ...database,
       // CRITICAL: synchronize=false in production; use migrations instead
-      synchronize: !isProd,
+      autoLoadEntities: true,
+      synchronize: false,
+      namingStrategy: new SnakeNamingStrategy(),
       // In production, run compiled migrations from dist/
       migrations: isProd
         ? [__dirname + '/migrations/*{.js}']

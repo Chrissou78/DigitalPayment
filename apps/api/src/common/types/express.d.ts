@@ -4,6 +4,7 @@ declare namespace Express {
   interface User {
     id: string;
     merchantId: string;
+    walletId: string;
     role: string;
   }
 }

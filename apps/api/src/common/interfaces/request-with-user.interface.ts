@@ -4,6 +4,7 @@ import { Request } from "express";
 export interface AuthUser {
   id: string;
   merchantId: string;
+  walletId: string;
   role: string;
 }
 

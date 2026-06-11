@@ -1,5 +1,12 @@
-Version: 1.0
-Base URL: https://api.payduka.co.za/v1
+Version: 1.1
+Last Updated: 2026-06-06
+Base path: /api/v1 (configurable via API_PREFIX; production host TBD)
+
+> Status: this specification describes the intended REST contract. Endpoint
+> shapes are the design target; some are implemented and some are planned. Two
+> areas already differ from the build and are corrected inline below: the token
+> model (see Token Lifecycle) and the wallet balance model, which has three
+> buckets — available, reserved, staked — and no separate "pending" balance.
 
 ---
 
@@ -12,9 +19,14 @@ Authorization: Bearer <access_token> X-Device-Id: <device_fingerprint> X-App-Ver
 
 
 ### Token Lifecycle
-- Access token: 15 minute expiry, signed with RS256.
-- Refresh token: 7 day expiry, rotated on each use (old token invalidated).
-- MFA required for: merchant withdrawals, advance acceptance, profile changes.
+
+Target design: short-lived RS256 access tokens with single-use refresh-token
+rotation, and MFA on merchant withdrawals, advance acceptance, and profile
+changes.
+
+Current implementation: a single access token signed with a shared secret
+(`JWT_SECRET`), lifetime `JWT_EXPIRATION` (default 3600 seconds). Refresh-token
+rotation, RS256, and MFA are planned, not yet built. See `SECURITY.md`.
 
 ---
 

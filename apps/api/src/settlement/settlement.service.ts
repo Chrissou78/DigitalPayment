@@ -29,7 +29,7 @@ export class SettlementService {
   ): Promise<void> {
     // Find the original transaction
     const txn = await this.txnRepo.findOne({
-      where: { externalPaymentId, type: TransactionType.CARD },
+      where: { merchantRef: externalPaymentId, type: "PAYMENT" },
     });
 
     if (!txn) {

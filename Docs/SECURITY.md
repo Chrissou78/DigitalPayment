@@ -1,6 +1,13 @@
 # PayDuka — Security Specification
 
-Version: 1.0
+Version: 1.1
+Last Updated: 2026-06-06
+
+> Status: this document describes the target security posture. Controls tied to
+> AWS (KMS, WAF, Secrets Manager, ACM, VPC) describe the production design and
+> are not part of the current local/dev build. The JWT subsection notes current
+> versus planned behaviour. The runbooks referenced in section 5 live under a
+> `Docs/runbooks/` folder that is planned and not yet committed.
 
 ---
 
@@ -36,6 +43,12 @@ Version: 1.0
 - Refresh token expiry: 7 days, single-use (rotated on each refresh)
 - Payload: { sub: userId, type: userType, roles: [], deviceId, iat, exp }
 
+**Current implementation.** The backend today signs with a single shared secret
+(`JWT_SECRET`) and a single access token whose lifetime is `JWT_EXPIRATION`
+(default 3600 seconds). RS256 asymmetric signing, 15-minute access tokens, and
+single-use refresh-token rotation described above are the planned hardening, not
+the current behaviour.
+
 ### 1.5 Role-Based Access Control
 
 | Role | Scope |
@@ -46,6 +59,10 @@ Version: 1.0
 | OPERATOR | VIEWER + merchant verification + standard withdrawal approval |
 | RISK_ANALYST | OPERATOR + fraud queue review + merchant risk adjustment |
 | ADMINISTRATOR | Full access including system configuration |
+
+**Current implementation.** The committed `Role` enum is `CUSTOMER`, `MERCHANT`,
+`AGENT`, `ADMIN`. The finer admin sub-roles above (VIEWER, OPERATOR,
+RISK_ANALYST, ADMINISTRATOR) are the planned breakdown of `ADMIN`.
 
 ---
 

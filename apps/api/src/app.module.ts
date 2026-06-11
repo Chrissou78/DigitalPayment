@@ -5,7 +5,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 
-import configuration from './configuration';
+import configuration from './config/configuration';
 
 // Feature modules
 import { AuthModule } from './auth/auth.module';
@@ -36,15 +36,21 @@ import { AdminModule } from './admin/admin.module';
     // ── Database ──
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => config.get('database'),
+      useFactory: (config: ConfigService) => {
+        const dbConfig = config.get("database");
+        if (!dbConfig) throw new Error("Database configuration is missing");
+        return dbConfig;
+      },
     }),
 
     // ── Redis + Queues ──
     BullModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        connection: config.get('redis'),
-      }),
+      useFactory: (config: ConfigService) => {
+        const redisConfig = config.get("redis");
+        if (!redisConfig) throw new Error("Redis configuration is missing");
+        return { connection: redisConfig };
+      },
     }),
 
     // ── Events ──

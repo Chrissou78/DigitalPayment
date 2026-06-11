@@ -1,118 +1,167 @@
 # PayDuka — Africa's Instant Payment Platform
 
+Version: 2.0
+Last Updated: 2026-06-06
+
 ## Overview
 
-PayDuka is a payment platform that eliminates card network fees for African merchants
-by routing payments through direct bank-to-bank rails (PayShap, Capitec Pay) and an
-auto-refilling wallet system. Merchants save 60-90% on transaction fees compared to
-card processing, with instant settlement on wallet payments and optional same-day
-advance on card payments.
+PayDuka eliminates card-network fees for African merchants by routing payments
+through direct bank-to-bank rails (PayShap, Capitec Pay) and an auto-refilling
+wallet system. Merchants save 60-90% on transaction fees versus card processing,
+with instant settlement on wallet payments and optional same-day advance on card
+payments.
+
+A blockchain layer (Polygon) sits underneath for deflationary burn, transparent
+treasury, and a verifiable audit trail, but users never see it. Everyone
+transacts in Rands.
 
 ## The Problem
 
-African merchants lose 2.5-3.5% of every card transaction to Visa/Mastercard interchange,
-acquiring banks, and payment processors. Settlement takes 1-3 business days. A merchant
-processing R100,000/month loses R30,000-R42,000/year in fees and has constant cash flow
-gaps from delayed settlement.
+African merchants lose 2.5-3.5% of every card transaction to interchange,
+acquiring banks, and processors, and wait 1-3 business days for settlement. A
+merchant doing R100,000/month loses R30,000-R42,000/year in fees and lives with
+constant cash-flow gaps.
 
 ## The Solution
 
-PayDuka provides three payment paths through a single QR-code interface:
+Three payment paths through one QR interface:
 
-1. **Wallet Payment** — Customer pays from auto-refilling PayDuka wallet.
-   Fee: R2-R3 flat. Settlement: instant.
-2. **Direct Bank Payment** — Customer pays via PayShap/Capitec Pay.
-   Fee: R5-R7 flat. Settlement: instant.
-3. **Card Payment** — Customer pays with Visa/Mastercard.
-   Fee: 2.5-3.5% (standard) + optional 1-1.5% same-day advance fee.
-   Settlement: 1-3 days standard, or same-day with advance.
+1. **Wallet payment** — customer pays from an auto-refilling PayDuka wallet. Fee
+   ~1.5%. Settlement: instant.
+2. **Direct bank payment** — customer pays via PayShap/Capitec Pay. Flat fee.
+   Settlement: instant.
+3. **Card payment** — customer pays by card. Standard card fee, plus an optional
+   same-day advance fee. Settlement: 1-3 days, or same-day with advance.
 
 ## Tech Stack
 
-- **Backend:** Node.js 20 LTS, NestJS 11, TypeScript 5.x
+- **Backend:** Node.js 20 LTS, NestJS 11, TypeScript 5
 - **Database:** PostgreSQL 16, Redis 7
-- **Mobile Apps:** React Native 0.76+ (Expo)
-- **Admin Dashboard:** Next.js 15, React 19
-- **Job Queue:** BullMQ
-- **Payment Rails:** Stitch API (GraphQL) — PayShap, Capitec Pay, DebiCheck, Card Acquiring
-- **Blockchain (Phase 3):** Polygon, ethers.js v6, Solidity 0.8.x
-- **Infrastructure:** AWS (af-south-1 Cape Town), ECS Fargate, RDS, ElastiCache, S3, KMS
+- **Job queue:** BullMQ
+- **Mobile apps:** React Native 0.76+ (Expo), NativeWind, Zustand
+- **Admin dashboard:** Next.js 15, React 19, Tailwind
+- **Payment rails:** Stitch API (GraphQL) — PayShap, Capitec Pay, DebiCheck, card acquiring
+- **Blockchain:** Polygon, Solidity 0.8.24, Hardhat 3, ethers v6
+- **Tooling:** pnpm workspaces, Turborepo
+- **Infrastructure:** AWS af-south-1 (Cape Town), ECS Fargate, RDS, ElastiCache
 - **CI/CD:** GitHub Actions
-- **Monitoring:** CloudWatch, Sentry
 
 ## Project Structure
 
+```
+DigitalPayment/                 repo root (product: PayDuka)
+├── apps/
+│   ├── api/                    NestJS backend — source of truth for all money
+│   ├── merchant-app/           React Native (Expo) merchant PoS
+│   ├── customer-app/           React Native (Expo) customer wallet
+│   └── admin-dashboard/        Next.js operations console
+├── packages/
+│   └── shared/                 shared enums, interfaces, constants (@payduka/shared)
+├── contracts/                  Solidity (Hardhat 3): 6 contracts + tests
+├── infra/
+│   └── docker-compose.yml      local Postgres + Redis
+├── Docs/                       project documentation (see index below)
+├── Deck/                       pitch deck (pptx + pdf)
+├── Website/                    static marketing page + whitepaper
+├── .github/workflows/          CI/CD pipelines
+├── package.json                workspace scripts + Turborepo
+├── turbo.json                  Turborepo pipeline
+└── pnpm-workspace.yaml         workspace globs
+```
 
-payduka/ ├── apps/ │ ├── api/ # NestJS backend (monorepo root app) │ ├── merchant-app/ # React Native merchant PoS app │ ├── customer-app/ # React Native customer app │ └── admin-dashboard/ # Next.js admin dashboard ├── packages/ │ ├── shared-types/ # Shared TypeScript types/interfaces │ ├── shared-utils/ # Shared utility functions │ └── api-client/ # Generated API client for frontends ├── infrastructure/ │ ├── docker/ # Docker configs │ ├── terraform/ # AWS infrastructure as code │ └── scripts/ # Deployment and utility scripts ├── docs/ # All project documentation │ ├── architecture.md │ ├── api-spec.md │ ├── database-schema.md │ ├── payment-flows.md │ ├── security.md │ ├── fraud-engine.md │ └── runbooks/ ├── .github/ │ └── workflows/ # CI/CD pipelines ├── docker-compose.yml # Local development environment ├── package.json # Root workspace package.json ├── turbo.json # Turborepo configuration └── README.md
-
+For a file-by-file walkthrough, see `STRUCTURE.md`.
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 20 LTS
-- Docker & Docker Compose
-- PostgreSQL 16 (via Docker)
-- Redis 7 (via Docker)
+- pnpm 9 (`corepack enable` then `corepack prepare pnpm@9 --activate`)
+- Docker & Docker Compose (for Postgres + Redis)
 
-### Local Development
+### Local development
 
-# Clone the repository
-git clone https://github.com/payduka/payduka-platform.git
-cd payduka-platform
+```bash
+# Install all workspace dependencies
+pnpm install
 
-# Install dependencies
-npm install
+# Start local infrastructure (Postgres + Redis)
+pnpm infra:up
 
-#  environment files
-cp apps/api/.env.example apps/api/.env
+# Configure the API environment
+cp apps/api/.env.example apps/api/.env   # then edit values
 
-# Start infrastructure (PostgreSQL, Redis)
-docker-compose up -d postgres redis
+# Run database migrations (from the API workspace)
+pnpm --filter @payduka/api migration:run
 
-# Run database migrations
-npm run db:migrate --workspace=apps/api
+# Start the API in dev mode
+pnpm dev:api
 
-# Seed development data
-npm run db:seed --workspace=apps/api
+# In separate terminals, start the frontends as needed
+pnpm dev:merchant
+pnpm dev:customer
+pnpm dev:admin
+```
 
-# Start the API in development mode
-npm run dev --workspace=apps/api
+Useful root scripts: `pnpm build:all`, `pnpm test:all`, `pnpm lint:all`,
+`pnpm infra:down`, `pnpm infra:reset`, `pnpm contracts:test`,
+`pnpm contracts:deploy:testnet`, `pnpm contracts:deploy:mainnet`.
 
-# In separate terminals:
-npm run dev --workspace=apps/admin-dashboard
-npm run dev --workspace=apps/merchant-app
-npm run dev --workspace=apps/customer-app
-Environment Variables
-See apps/api/.env.example for the complete list. Critical variables:
+### Key environment variables
 
-DATABASE_URL=postgresql://payduka:payduka@localhost:5432/payduka
-REDIS_URL=redis://localhost:6379
-STITCH_CLIENT_ID=your_stitch_client_id
-STITCH_CLIENT_SECRET=your_stitch_client_secret
-STITCH_API_URL=https://api.stitch.money/graphql
+Set these in `apps/api/.env` (see `config/configuration.ts` for the full list):
+
+```
+DATABASE_URL=postgresql://payduka:payduka_secret@localhost:5432/payduka
+REDIS_HOST=localhost
+REDIS_PORT=6379
 JWT_SECRET=your_jwt_secret_min_32_chars
-JWT_REFRESH_SECRET=your_refresh_secret_min_32_chars
-AWS_KMS_KEY_ID=your_kms_key_id
-SENTRY_DSN=your_sentry_dsn
-Development Conventions
-All monetary values stored as integers in cents (R10.50 = 1050)
-All timestamps in UTC, stored as timestamptz in PostgreSQL
-All IDs are UUIDs v4
-API responses follow a consistent envelope: { data, meta, errors }
-Every database mutation creates an audit log entry
-Every balance change creates an immutable ledger entry
-No direct SQL — all queries through TypeORM repositories
-Branch naming: feature/PD-123-description, fix/PD-124-description
-Commit messages: conventional commits (feat:, fix:, chore:, docs:)
-All PRs require at least one review and passing CI
-Documentation Index
-Document	Description
-Architecture	System architecture, module design, data flow
-Database Schema	Complete schema with all tables, indexes, constraints
-API Specification	All endpoints, request/response formats, auth
-Payment Flows	Detailed flow diagrams for every payment path
-Security	Authentication, encryption, key management
-Fraud Engine	Risk scoring rules, thresholds, escalation
-Deployment	CI/CD pipeline, environments, rollback procedures
-Runbooks	Operational procedures for incidents and maintenance
+STITCH_CLIENT_ID=...
+STITCH_CLIENT_SECRET=...
+STITCH_API_URL=https://api.stitch.money/graphql
+ADMIN_DEFAULT_EMAIL=admin@payduka.xyz
+ADMIN_DEFAULT_PASSWORD=change-me
+```
+
+## Tests
+
+```bash
+# API unit tests (Jest)
+pnpm --filter @payduka/api test
+
+# Smart-contract tests (Hardhat)
+pnpm contracts:test
+```
+
+Current state: API at 27 passing tests across 7 suites; contracts at 21 Mocha
+tests plus 21 Solidity tests. Service code is written to satisfy the
+`*.service.spec.ts` files, which act as the behavioural spec.
+
+## Development Conventions
+
+- All monetary values are integer ZAR cents (R10.50 = `1050`).
+- All timestamps are `timestamptz` in UTC.
+- All primary keys are UUIDs.
+- API responses use a consistent envelope: `{ data, meta, errors }`.
+- Every balance change writes an immutable `ledger_entries` row in the same
+  transaction.
+- Money-movement enums live once in `@payduka/shared`; never redefine them in an
+  app.
+- Schema changes go through migrations, never `synchronize` in production.
+- No raw SQL in services — go through TypeORM repositories. (Raw SQL is used
+  only inside migration files.)
+- Conventional commits (`feat:`, `fix:`, `chore:`, `docs:`); PRs need a review
+  and green CI.
+
+## Documentation Index
+
+| Document | Description |
+|----------|-------------|
+| `STRUCTURE.md` | Repository layout and a description of every significant file |
+| `ARCHITECTURE.md` | System layers, money flows, smart contracts, modules |
+| `DATABASE.md` | Authoritative schema reference matching the migration |
+| `API.md` | REST API specification: endpoints, envelope, error codes |
+| `FRAUDENGINE.md` | Risk-scoring rules, thresholds, and roadmap |
+| `SECURITY.md` | Authentication, encryption, key management |
+| `INFRASTRUCTURE.md` | Environments, deployment, infrastructure |
+| `MoscoW.md` | Scope prioritisation (Must / Should / Could / Won't) |

@@ -1,12 +1,28 @@
-import { IsString, IsEmail, IsNotEmpty, IsOptional } from 'class-validator';
+// apps/api/src/merchant/dto/create-merchant.dto.ts
+import { IsString, IsEmail, IsNotEmpty, IsOptional } from "class-validator";
 
 export class CreateMerchantDto {
-  @IsString() @IsNotEmpty()
-  businessName: string;
+  @IsString()
+  @IsNotEmpty()
+  businessName!: string;
 
+  @IsString()
+  @IsNotEmpty()
+  phone!: string;
+
+  @IsOptional()
   @IsEmail()
-  email: string;
+  email?: string;
 
-  @IsOptional() @IsString()
-  phone?: string;
+  @IsString()
+  @IsNotEmpty()
+  pin!: string;
+
+  @IsOptional()
+  @IsString()
+  tradingName?: string;
+
+  @IsOptional()
+  @IsString()
+  registrationNumber?: string;
 }

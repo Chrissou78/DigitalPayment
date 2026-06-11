@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import * as SecureStore from "expo-secure-store";
+import * as SecureStore from "@/lib/secure-store";
 import * as LocalAuth from "expo-local-authentication";
 import { post } from "@/lib/api";
 
@@ -41,8 +41,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       "/customers/register",
       { phone, pin, firstName, lastName }
     );
-    await SecureStore.setItemAsync(TOKEN_KEY, res.access_token);
-    await SecureStore.setItemAsync(CUSTOMER_KEY, JSON.stringify(res.customer));
+    await SecureStore.setItem(TOKEN_KEY, res.access_token);
+    await SecureStore.setItem(CUSTOMER_KEY, JSON.stringify(res.customer));
     set({ accessToken: res.access_token, customer: res.customer });
   },
 
@@ -51,8 +51,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       "/customers/login",
       { phone, pin }
     );
-    await SecureStore.setItemAsync(TOKEN_KEY, res.access_token);
-    await SecureStore.setItemAsync(CUSTOMER_KEY, JSON.stringify(res.customer));
+    await SecureStore.setItem(TOKEN_KEY, res.access_token);
+    await SecureStore.setItem(CUSTOMER_KEY, JSON.stringify(res.customer));
     set({ accessToken: res.access_token, customer: res.customer });
   },
 
@@ -68,8 +68,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
     if (!result.success) return false;
 
-    const token = await SecureStore.getItemAsync(TOKEN_KEY);
-    const custJson = await SecureStore.getItemAsync(CUSTOMER_KEY);
+    const token = await SecureStore.getItem(TOKEN_KEY);
+    const custJson = await SecureStore.getItem(CUSTOMER_KEY);
     if (!token || !custJson) return false;
 
     const customer = JSON.parse(custJson) as Customer;
@@ -88,24 +88,24 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
     if (!result.success) throw new Error("Cancelled.");
 
-    await SecureStore.setItemAsync(BIO_KEY, "true");
+    await SecureStore.setItem(BIO_KEY, "true");
     set({ biometricEnabled: true });
   },
 
   disableBiometric: () => {
-    SecureStore.deleteItemAsync(BIO_KEY);
+    SecureStore.deleteItem(BIO_KEY);
     set({ biometricEnabled: false });
   },
 
   logout: () => {
-    SecureStore.deleteItemAsync(TOKEN_KEY);
-    SecureStore.deleteItemAsync(CUSTOMER_KEY);
+    SecureStore.deleteItem(TOKEN_KEY);
+    SecureStore.deleteItem(CUSTOMER_KEY);
     set({ accessToken: null, customer: null });
   },
 
   restoreSession: async () => {
-    const bioFlag = await SecureStore.getItemAsync(BIO_KEY);
-    const token = await SecureStore.getItemAsync(TOKEN_KEY);
+    const bioFlag = await SecureStore.getItem(BIO_KEY);
+    const token = await SecureStore.getItem(TOKEN_KEY);
     set({ biometricEnabled: bioFlag === "true", isLoading: false });
     return bioFlag === "true" && !!token;
   },

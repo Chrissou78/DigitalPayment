@@ -47,7 +47,9 @@ export default function ChargeScreen() {
         setStage("SUCCESS");
       }
     });
-    return unsub;
+    return () => {
+      unsub();
+    };
   }, [stage]);
 
   const reset = () => {

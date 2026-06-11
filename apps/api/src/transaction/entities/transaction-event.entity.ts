@@ -1,13 +1,8 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  ManyToOne,
-  JoinColumn,
+  Entity, PrimaryGeneratedColumn, Column,
+  CreateDateColumn, ManyToOne, JoinColumn,
 } from "typeorm";
 import { Transaction } from "./transaction.entity";
-import { TransactionStatus } from "../../common/enums/transaction-status.enum";
 
 @Entity("transaction_events")
 export class TransactionEvent {
@@ -18,13 +13,13 @@ export class TransactionEvent {
   transactionId!: string;
 
   @ManyToOne(() => Transaction, (t) => t.events)
-  @JoinColumn({ name: "transactionId" })
+  @JoinColumn({ name: "transaction_id" })
   transaction!: Transaction;
 
-  @Column({ type: "enum", enum: TransactionStatus })
-  status!: TransactionStatus;
+  @Column({ length: 50 })
+  event!: string;
 
-  @Column({ type: "jsonb", nullable: true })
+  @Column({ type: "jsonb", default: "{}" })
   data!: Record<string, any>;
 
   @CreateDateColumn()

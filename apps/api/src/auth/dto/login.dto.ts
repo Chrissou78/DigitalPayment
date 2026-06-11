@@ -1,11 +1,12 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+// apps/api/src/auth/dto/login.dto.ts
+import { IsString, IsNotEmpty } from "class-validator";
 
 export class LoginDto {
   @IsString()
   @IsNotEmpty()
-  apiKey: string;
+  apiKey!: string;
 
   @IsString()
   @IsNotEmpty()
-  apiSecret: string;
+  apiSecret!: string;
 }

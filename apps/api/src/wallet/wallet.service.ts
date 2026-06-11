@@ -1,125 +1,122 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, QueryRunner } from 'typeorm';
-import { Wallet } from './entities/wallet.entity';
-import { LedgerEntry } from './entities/ledger-entry.entity';
-import { LedgerEntryType } from '@payduka/shared';
-import { WalletStatus } from '../common/enums/wallet-status.enum';
+// apps/api/src/wallet/wallet.service.ts
+import { Injectable, BadRequestException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, QueryRunner, DataSource } from "typeorm";
+import { Wallet } from "./entities/wallet.entity";
+import { LedgerEntry } from "./entities/ledger-entry.entity";
+import { LedgerEntryType, LedgerReferenceType } from "@payduka/shared";
 
 @Injectable()
 export class WalletService {
   constructor(
     @InjectRepository(Wallet)
     private readonly walletRepo: Repository<Wallet>,
+    private readonly dataSource: DataSource,
     @InjectRepository(LedgerEntry)
     private readonly ledgerRepo: Repository<LedgerEntry>,
-    private readonly dataSource: DataSource,
   ) {}
 
   async createForMerchant(merchantId: string): Promise<Wallet> {
-    const wallet = this.walletRepo.create({ ownerId: merchantId, ownerType: 'MERCHANT' });
+    const wallet = this.walletRepo.create({
+      ownerId: merchantId,
+      ownerType: "MERCHANT",
+    });
     return this.walletRepo.save(wallet);
   }
 
-  async findByMerchantId(merchantId: string): Promise<Wallet> {
-    return this.walletRepo.findOneOrFail({ where: { ownerId: merchantId, ownerType: 'MERCHANT' } });
-  }
-
-  /**
-   * Atomic debit + credit within a QueryRunner transaction.
-   * Called by TransactionService inside its own BEGIN/COMMIT block.
-   */
-  async debit(
-    qr: QueryRunner,
-    walletId: string,
-    amount: number,
-    type: LedgerEntryType,
-    referenceType: string | null,
-    referenceId: string | null,
-    description: string,
-  ): Promise<LedgerEntry> {
-    // Lock the wallet row
-    const wallet = await qr.manager.findOne(Wallet, {
-      where: { id: walletId },
-      lock: { mode: 'pessimistic_write' },
-    });
-
-    if (!wallet || wallet.status !== WalletStatus.ACTIVE) {
-      throw new BadRequestException('Wallet not available');
-    }
-
-    if (wallet.available < amount) {
-      throw new BadRequestException('Insufficient balance');
-    }
-
-    wallet.available = Number(wallet.available) - amount;
-    await qr.manager.save(wallet);
-
-    const entry = qr.manager.create(LedgerEntry, {
-      walletId,
-      type,
-      amount: -amount,
-      balanceAfter: wallet.available,
-      referenceType,
-      referenceId,
-      description,
-    });
-    return qr.manager.save(entry);
+  async getBalance(walletId: string) {
+    const wallet = await this.walletRepo.findOne({ where: { id: walletId } });
+    if (!wallet) throw new BadRequestException("Wallet not found");
+    return {
+      available: wallet.available,
+      reserved: wallet.reserved,
+      staked: wallet.staked,
+    };
   }
 
   async credit(
-    qr: QueryRunner,
+    queryRunner: QueryRunner,
     walletId: string,
     amount: number,
     type: LedgerEntryType,
-    referenceType: string | null,
-    referenceId: string | null,
+    referenceType: LedgerReferenceType,
+    referenceId: string,
     description: string,
-  ): Promise<LedgerEntry> {
-    const wallet = await qr.manager.findOne(Wallet, {
+  ): Promise<void> {
+    const wallet = await queryRunner.manager.findOne(Wallet, {
       where: { id: walletId },
-      lock: { mode: 'pessimistic_write' },
+      lock: { mode: "pessimistic_write" },
     });
+    if (!wallet) throw new BadRequestException("Wallet not found");
 
-    if (!wallet || wallet.status !== WalletStatus.ACTIVE) {
-      throw new BadRequestException('Wallet not available');
-    }
+    wallet.available += amount;
+    await queryRunner.manager.save(wallet);
 
-    if (type === LedgerEntryType.RESERVE_HOLD) {
-      wallet.reserved = Number(wallet.reserved) + amount;
-    } else {
-      wallet.available = Number(wallet.available) + amount;
-    }
-
-    await qr.manager.save(wallet);
-
-    const entry = qr.manager.create(LedgerEntry, {
+    await queryRunner.manager.save(LedgerEntry, {
       walletId,
       type,
-      amount: +amount,
-      balanceAfter:
-        type === LedgerEntryType.RESERVE_HOLD
-          ? wallet.reserved
-          : wallet.available,
       referenceType,
-      referenceId,
+      amount,
+      balanceAfter: wallet.available,
+      transactionId: referenceId,
       description,
     });
-    return qr.manager.save(entry);
   }
 
-  async getBalance(
+  async debit(
+    queryRunner: QueryRunner,
     walletId: string,
-  ): Promise<{ available: number; reserved: number; staked: number; currency: string }> {
-    const w = await this.walletRepo.findOne({ where: { id: walletId } });
-    if (!w) {
-      throw new BadRequestException('Wallet not found');
+    amount: number,
+    type: LedgerEntryType,
+    referenceType: LedgerReferenceType,
+    referenceId: string,
+    description: string,
+  ): Promise<void> {
+    const wallet = await queryRunner.manager.findOne(Wallet, {
+      where: { id: walletId },
+      lock: { mode: "pessimistic_write" },
+    });
+    if (!wallet) throw new BadRequestException("Wallet not found");
+
+    if (wallet.available < amount) {
+      throw new BadRequestException("Insufficient balance");
     }
-    return {
-      available: Number(w.available),
-      reserved: Number(w.reserved),
-      staked: Number(w.staked),
-      currency: w.currency,
-    };
+
+    wallet.available -= amount;
+    await queryRunner.manager.save(wallet);
+
+    await queryRunner.manager.save(LedgerEntry, {
+      walletId,
+      type,
+      referenceType,
+      amount: -amount,
+      balanceAfter: wallet.available,
+      transactionId: referenceId,
+      description,
+    });
+  }
+
+  async findByPhone(phone: string): Promise<Wallet> {
+  // Look up customer by phone, then find their wallet
+  const customer = await this.dataSource.getRepository("Customer")
+    .findOne({ where: { phone } });
+  if (!customer) throw new BadRequestException("Customer not found");
+  const wallet = await this.walletRepo.findOne({
+    where: { ownerId: (customer as any).id, ownerType: "CUSTOMER" },
+  });
+  if (!wallet) throw new BadRequestException("Customer wallet not found");
+  return wallet;
+}
+
+  async findByOwnerId(ownerId: string): Promise<Wallet | null> {
+    return this.walletRepo.findOne({ where: { ownerId } });
+  }
+
+  async findByMerchantId(merchantId: string): Promise<Wallet> {
+    const wallet = await this.walletRepo.findOne({
+      where: { ownerId: merchantId, ownerType: "MERCHANT" },
+    });
+    if (!wallet) throw new BadRequestException("Merchant wallet not found");
+    return wallet;
   }
 }

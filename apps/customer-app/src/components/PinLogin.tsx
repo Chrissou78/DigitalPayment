@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
 import { useAuthStore } from "@/stores/auth";
 
 interface Props {
@@ -35,9 +29,9 @@ export function PinLogin({ onSuccess, onRegister }: Props) {
   };
 
   return (
-    <View className="flex-1 bg-bg items-center justify-center px-8">
-      <Text className="font-heading text-gold text-3xl mb-1">PayDuka</Text>
-      <Text className="text-ink-muted text-base mb-10">Welcome back</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>PayDuka</Text>
+      <Text style={styles.subtitle}>Welcome back</Text>
 
       <TextInput
         placeholder="Phone number"
@@ -45,7 +39,7 @@ export function PinLogin({ onSuccess, onRegister }: Props) {
         value={phone}
         onChangeText={setPhone}
         keyboardType="phone-pad"
-        className="w-full bg-surface border border-surface-2 rounded-xl px-4 py-3 text-ink text-base mb-4"
+        style={styles.input}
       />
       <TextInput
         placeholder="PIN"
@@ -55,30 +49,83 @@ export function PinLogin({ onSuccess, onRegister }: Props) {
         secureTextEntry
         keyboardType="number-pad"
         maxLength={6}
-        className="w-full bg-surface border border-surface-2 rounded-xl px-4 py-3 text-ink text-base mb-6"
+        style={[styles.input, { marginBottom: 24 }]}
       />
 
-      {error && (
-        <Text className="text-red text-sm mb-4 text-center">{error}</Text>
-      )}
+      {error && <Text style={styles.error}>{error}</Text>}
 
-      <TouchableOpacity
-        onPress={handleLogin}
-        disabled={loading}
-        className="w-full bg-gold rounded-xl py-4 items-center mb-4"
-      >
+      <TouchableOpacity onPress={handleLogin} disabled={loading} style={styles.button}>
         {loading ? (
           <ActivityIndicator color="#0A0A08" />
         ) : (
-          <Text className="text-bg font-heading text-base">Sign In</Text>
+          <Text style={styles.buttonText}>Sign In</Text>
         )}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={onRegister}>
-        <Text className="text-gold text-sm">
-          New to PayDuka? <Text className="underline">Create account</Text>
+        <Text style={styles.link}>
+          New to PayDuka? <Text style={styles.linkUnderline}>Create account</Text>
         </Text>
       </TouchableOpacity>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#0A0A08",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+  },
+  title: {
+    color: "#C8A85C",
+    fontSize: 30,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  subtitle: {
+    color: "#A09880",
+    fontSize: 16,
+    marginBottom: 40,
+  },
+  input: {
+    width: "100%",
+    backgroundColor: "#141410",
+    borderWidth: 1,
+    borderColor: "#1E1E18",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: "#F5F0E8",
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  error: {
+    color: "#F87171",
+    fontSize: 14,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  button: {
+    width: "100%",
+    backgroundColor: "#C8A85C",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  buttonText: {
+    color: "#0A0A08",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  link: {
+    color: "#C8A85C",
+    fontSize: 14,
+  },
+  linkUnderline: {
+    textDecorationLine: "underline",
+  },
+});

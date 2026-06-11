@@ -21,6 +21,8 @@
     "contracts:deploy:mainnet": "cd contracts && npx hardhat run scripts/deploy.ts --network polygon"
   },
   "devDependencies": {
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.15",
     "turbo": "^2.3.0"
   }
 }

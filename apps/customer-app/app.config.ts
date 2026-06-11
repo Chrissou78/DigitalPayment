@@ -9,11 +9,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: "./assets/icon.png",
   scheme: "payduka",
   userInterfaceStyle: "dark",
-  splash: {
-    image: "./assets/splash.png",
-    resizeMode: "contain",
-    backgroundColor: "#0A0A08",
-  },
   android: {
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
@@ -35,6 +30,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   plugins: [
+    [
+      "expo-splash-screen",
+      {
+        backgroundColor: "#0A0A0F",
+        image: "./assets/splash.png",
+        imageWidth: 200,
+      },
+    ],
     "expo-router",
     "expo-local-authentication",
     "expo-secure-store",

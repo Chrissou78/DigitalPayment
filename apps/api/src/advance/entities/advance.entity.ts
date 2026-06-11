@@ -1,11 +1,7 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
+  Entity, PrimaryGeneratedColumn, Column,
+  CreateDateColumn, UpdateDateColumn,
 } from "typeorm";
-import { AdvanceStatus } from "../../common/enums/advance-status.enum";
 import { bigintTransformer } from "../../common/transformers/bigint.transformer";
 
 @Entity("advances")
@@ -19,20 +15,26 @@ export class Advance {
   @Column("uuid")
   transactionId!: string;
 
-  @Column("uuid")
-  merchantWalletId!: string;
+  @Column({ type: "bigint", transformer: bigintTransformer })
+  originalAmount!: number;
 
   @Column({ type: "bigint", transformer: bigintTransformer })
-  principal!: number;
+  advanceAmount!: number;
 
   @Column({ type: "bigint", transformer: bigintTransformer })
-  fee!: number;
+  advanceFee!: number;
 
-  @Column({ type: "enum", enum: AdvanceStatus, default: AdvanceStatus.OUTSTANDING })
-  status!: AdvanceStatus;
+  @Column({ type: "enum", enum: ["ELIGIBLE", "OUTSTANDING", "SETTLED", "OVERDUE", "DEDUCTED"], default: "OUTSTANDING" })
+  status!: string;
 
-  @Column({ type: "timestamp", nullable: true })
+  @Column({ type: "bigint", nullable: true, transformer: bigintTransformer })
+  settledAmount!: number;
+
+  @Column({ type: "timestamptz", nullable: true })
   settledAt!: Date;
+
+  @Column({ type: "timestamptz", nullable: true })
+  overdueAt!: Date;
 
   @CreateDateColumn()
   createdAt!: Date;

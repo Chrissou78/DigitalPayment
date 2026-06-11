@@ -9,11 +9,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: "./assets/icon.png",
   scheme: "payduka-merchant",
   userInterfaceStyle: "dark",
-  splash: {
-    image: "./assets/splash.png",
-    resizeMode: "contain",
-    backgroundColor: "#0A0A08",
-  },
   android: {
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
@@ -36,7 +31,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         "PayDuka uses the camera to scan QR codes.",
     },
   },
-  plugins: ["expo-router", "expo-local-authentication", "expo-secure-store"],
+  plugins: [
+    [
+      "expo-splash-screen",
+      {
+        backgroundColor: "#0A0A0F",
+        image: "./assets/splash.png",
+        imageWidth: 200,
+      },
+    ],
+    "expo-router", "expo-local-authentication", "expo-secure-store"],
   extra: {
     apiBaseUrl: process.env.API_BASE_URL ?? "http://localhost:3000/api/v1",
     wsBaseUrl: process.env.WS_BASE_URL ?? "ws://localhost:3000/ws",

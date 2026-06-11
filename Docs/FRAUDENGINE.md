@@ -1,170 +1,115 @@
-# PayDuka — Fraud Detection Engine Specification
+# PayDuka — Fraud & Risk Engine
 
-Version: 1.0
+Version: 2.0
+Last Updated: 2026-06-06
 
----
+This document describes the fraud engine as implemented in
+`apps/api/src/fraud/fraud.service.ts`, and the roadmap for hardening it.
 
-## Overview
-
-The fraud engine is a synchronous middleware in the transaction lifecycle.
-Every transaction is scored BEFORE any balance changes occur. The engine
-returns a risk level (LOW/MEDIUM/HIGH) and a recommended action
-(APPROVE/HOLD/REJECT).
-
-Phase 1 uses a rule-based scoring system. ML-based models are introduced
-in Phase 5 after sufficient labeled data accumulates.
+> Status note (v2.0): the engine is a synchronous, in-memory rules scorer. The
+> richer model in earlier drafts (a configurable `fraud_rules` table, velocity
+> and device rules) is roadmap, not current behaviour. What persists today is
+> the resulting alert in the `fraud_alerts` table; the rules themselves live in
+> code. This document marks implemented versus planned clearly.
 
 ---
 
-## Scoring Methodology
+## 1. What it does today
 
-Each transaction is evaluated against all active rules. Each triggered rule
-contributes a weighted score. The total score (0-100) maps to a risk level:
+`FraudService.score()` takes a transaction context and returns a verdict:
 
-| Score | Risk Level | Action |
-|-------|-----------|--------|
-| 0-30 | LOW | APPROVE — transaction proceeds immediately |
-| 31-60 | MEDIUM | HOLD — transaction flagged for review, 24hr delay on advances |
-| 61-100 | HIGH | REJECT — transaction blocked, fraud alert created |
+```ts
+score(params: {
+  merchantId: string;
+  customerId?: string;
+  amount: number;            // ZAR cents
+  type: string;
+  metadata?: Record<string, any>;
+}): Promise<FraudResult>
 
----
+interface FraudResult {
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  score: number;             // 0-100
+  flags: string[];
+  pass: boolean;             // false when riskLevel is HIGH
+}
+```
 
-## Rule Definitions
-
-### Velocity Rules
-
-**V1: Transaction frequency per customer**
-- Trigger: >10 transactions in 1 hour from same customer wallet
-- Weight: 20
-- Rationale: Legitimate retail purchases rarely exceed this frequency
-
-**V2: Transaction frequency per merchant**
-- Trigger: >100 transactions in 1 hour to same merchant
-- Weight: 10
-- Rationale: High volume is normal for some merchants; this catches outliers
-
-**V3: Rapid successive payments**
-- Trigger: >3 transactions within 60 seconds from same customer
-- Weight: 30
-- Rationale: Near-impossible for legitimate physical retail QR payments
-
-**V4: New account velocity**
-- Trigger: >5 transactions within first 24 hours of account creation
-- Weight: 15
-- Rationale: New accounts with high activity are suspicious
-
-### Amount Rules
-
-**A1: Single transaction amount**
-- Trigger: Transaction amount > R10,000 (or > 3x customer's average)
-- Weight: 15
-- Rationale: Unusually large transactions warrant additional scrutiny
-
-**A2: Daily cumulative amount**
-- Trigger: Customer's daily total > R25,000 (or > 5x daily average)
-- Weight: 20
-- Rationale: Sudden spending spikes may indicate account compromise
-
-**A3: Amount just below KYC threshold**
-- Trigger: Transaction amount between R4,500-R5,000 (just below Tier 1 limit)
-- Weight: 25
-- Rationale: Structuring to avoid KYC limits is a money laundering indicator
-
-### Device Rules
-
-**D1: New device**
-- Trigger: Transaction from a device not previously registered to this user
-- Weight: 15
-- Rationale: Account takeover often comes from new devices
-
-**D2: Multiple accounts per device**
-- Trigger: Device fingerprint associated with >2 different user accounts
-- Weight: 25
-- Rationale: Multiple accounts on one device suggests synthetic identity fraud
-
-**D3: Rooted/jailbroken device**
-- Trigger: Device reports root or jailbreak indicators
-- Weight: 10
-- Rationale: Rooted devices bypass security controls
-
-### Geolocation Rules
-
-**G1: Location mismatch**
-- Trigger: Transaction location >100km from customer's last known location
-  AND <30 minutes since last transaction
-- Weight: 20
-- Rationale: Impossible travel speed indicates cloned credentials
-
-**G2: Location mismatch with merchant**
-- Trigger: Customer location >50km from merchant's registered address
-  (for in-person payments)
-- Weight: 10
-- Rationale: In-person payments should be geographically proximate
-
-### Behavior Rules
-
-**B1: First transaction to merchant**
-- Trigger: Customer has never transacted with this merchant before
-- Weight: 5
-- Rationale: Low weight, but contributes to composite scoring
-
-**B2: Unusual time of day**
-- Trigger: Transaction between 00:00-05:00 local time
-- Weight: 10
-- Rationale: Most retail transactions occur during business hours
-
-**B3: P2P followed by immediate withdrawal**
-- Trigger: Customer receives P2P transfer then requests withdrawal within 1 hour
-- Weight: 30
-- Rationale: Classic money laundering / mule account pattern
-
-### Merchant-Specific Rules
-
-**M1: New merchant high volume**
-- Trigger: Merchant with <30 days history processing >R50,000/day
-- Weight: 20
-- Rationale: New merchants with sudden high volume may be fraudulent
-
-**M2: Merchant chargeback spike**
-- Trigger: Merchant's rolling 7-day chargeback rate exceeds 1%
-- Weight: 35
-- Rationale: High chargeback rate is the strongest fraud indicator
-
-**M3: Uniform transaction amounts**
-- Trigger: >80% of merchant's daily transactions are the exact same amount
-- Weight: 20
-- Rationale: Suggests manufactured transactions, not genuine retail activity
+The score starts at 0 and accumulates from the rules below. The level is derived
+from the score, and `pass` is simply "not HIGH". A transaction that does not pass
+is blocked by the caller.
 
 ---
 
-## Configuration Management
+## 2. Implemented rules (amount-based)
 
-All rules are stored in the `fraud_rules` database table with configurable
-thresholds. Rules can be enabled, disabled, or threshold-adjusted via the
-admin dashboard WITHOUT code deployment. Changes take effect on the next
-transaction (rules are loaded from cache with 60-second TTL).
+| Rule | Condition | Score added | Flag |
+|------|-----------|-------------|------|
+| High value | amount > 500,000 cents (R5,000) | +20 | `HIGH_VALUE` |
+| Very high value | amount > 2,000,000 cents (R20,000) | +30 | `VERY_HIGH_VALUE` |
+| Extreme value | amount > 10,000,000 cents (R100,000) | +30 | `EXTREME_VALUE` |
+
+Rules are cumulative. A R500,000 payment (50,000,000 cents) triggers all three:
+20 + 30 + 30 = 80.
 
 ---
 
-## Escalation Procedures
+## 3. Score thresholds
 
-**MEDIUM risk transactions:**
-- Transaction proceeds but is flagged in the admin fraud queue
-- If the transaction involves an advance, the advance is delayed 24 hours
-- Merchant is notified: "This transaction is being reviewed"
-- Risk analyst must review within 12 hours or it auto-approves
+| Score | Risk level | Outcome |
+|-------|-----------|---------|
+| 0-29 | LOW | pass |
+| 30-59 | MEDIUM | pass (flagged) |
+| 60-100 | HIGH | blocked (`pass = false`) |
 
-**HIGH risk transactions:**
-- Transaction is blocked immediately
-- Customer receives: "This payment could not be completed. Contact support."
-- Merchant receives nothing (to prevent social engineering)
-- Risk analyst is alerted immediately (push notification + email)
-- Risk analyst must review within 4 hours
-- If confirmed fraud: freeze the customer wallet, block the device,
-  create incident report
+Worked examples, matching the unit tests:
 
-**Merchant suspension triggers (automatic):**
-- Rolling 90-day chargeback rate exceeds 2%
-- 3 or more HIGH-risk transactions in 7 days
-- KYC document found to be fraudulent
-- Manual suspension by ADMINISTRATOR role
+- **R500 (50,000 cents):** no rule fires, score 0, LOW, pass.
+- **R500,000 (50,000,000 cents):** all three rules, score 80, HIGH, blocked.
+
+The `fraud_risk_level` database enum also defines `CRITICAL`, reserved for a
+future tier; the current scorer emits only LOW, MEDIUM, and HIGH.
+
+---
+
+## 4. Where the verdict goes
+
+- The transaction flow reads `pass`. If false, the payment is rejected before any
+  balance moves.
+- `risk_level` and `risk_score` are recorded on the `transactions` row.
+- A flagged or blocked transaction can be persisted to `fraud_alerts`
+  (transaction/merchant/customer ids, level, score, reason, details) for the
+  admin review queue. Alerts carry a `resolved` flag and resolution metadata.
+
+---
+
+## 5. Roadmap (planned, not yet implemented)
+
+The service marks these as TODOs. They are the next layers of defence:
+
+1. **Velocity checks** — Redis-backed sliding windows: transactions per minute,
+   hour, and day per customer, per merchant, and per device. Sudden spikes add
+   score.
+2. **Device fingerprinting** — new or untrusted device adds score; known good
+   device reduces it.
+3. **Geolocation anomalies** — impossible travel, mismatched region, high-risk
+   geographies.
+4. **Merchant history scoring** — chargeback rate (`chargeback_rate_bps`),
+   account age, trailing volume deviation.
+5. **Configurable rules** — move thresholds and weights out of code into a
+   `fraud_rules` table so they can be tuned without a deploy.
+6. **A CRITICAL tier** — for example confirmed-stolen-instrument signals, that
+   not only blocks but freezes the wallet and opens an alert automatically.
+
+---
+
+## 6. Design intent
+
+- **Fail safe.** A blocked transaction never moves money; the balance check and
+  the fraud check both run before any debit.
+- **Explainable.** Every verdict carries the flags that produced it, so a
+  reviewer can see exactly why a transaction scored the way it did.
+- **Cheap and synchronous now, async-capable later.** Amount rules are O(1) and
+  inline. Velocity and device rules will read from Redis and can be added without
+  changing the verdict contract.
+- **Tunable later without code changes** once rules move to the database.
